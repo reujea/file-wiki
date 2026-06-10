@@ -57,6 +57,9 @@ pub struct McpState {
     pub tfidf_rerank_enabled: bool,
     /// Phase 103 G3: KG Multi-hop 빔 검색 활성 (SearchConfig.kg_beam_search 주입).
     pub kg_beam_search: bool,
+    /// Phase 202 B2: plugin IPC 라우팅 — contributes.mcp_tool 호출 시 plugin_registry.call로 위임.
+    /// 본 phase는 필드만 추가 — 라우팅 로직 활용은 B4 fp-plugin-search 진입 시점.
+    pub plugin_registry: Arc<file_pipeline_core::plugin::PluginRegistry>,
 }
 
 impl McpState {
@@ -2224,6 +2227,7 @@ mod tests {
             audit: std::sync::Arc::new(file_pipeline_core::ports::output::NullAuditAdapter),
             tfidf_rerank_enabled: false,
             kg_beam_search: false,
+            plugin_registry: Arc::new(file_pipeline_core::plugin::PluginRegistry::new()),
         }
     }
 

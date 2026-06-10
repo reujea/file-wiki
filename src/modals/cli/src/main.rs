@@ -981,6 +981,8 @@ async fn main() -> Result<()> {
                 // Phase 103 G3 / G4 (GraphRAG 흡수 인프라 선구현)
                 tfidf_rerank_enabled: cfg.search.tfidf_rerank_enabled,
                 kg_beam_search: cfg.search.kg_beam_search,
+                // Phase 202 B2: plugin IPC registry (build_service에서 discover 완료)
+                plugin_registry: std::sync::Arc::clone(&service.plugin_registry),
             };
             // Phase 80-A/B: DB에서 카운터 복원
             state.restore_counters();

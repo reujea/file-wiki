@@ -85,6 +85,8 @@ pub struct ServiceBuilder {
     embed_instruction_prefix: Option<String>,
     global_thresholds: Option<VerificationThresholds>,
     metrics_recorder: Option<Arc<dyn ProcessingMetricsPort>>,
+    /// Phase 202 B2: plugin IPC registry (디폴트 빈 레지스트리, lesson 14 회피).
+    plugin_registry: Option<Arc<file_pipeline_core::plugin::PluginRegistry>>,
 }
 
 impl ServiceBuilder {
@@ -123,6 +125,7 @@ impl ServiceBuilder {
             embed_instruction_prefix: None,
             global_thresholds: None,
             metrics_recorder: None,
+            plugin_registry: None,
         }
     }
 
@@ -165,6 +168,16 @@ impl ServiceBuilder {
     pub fn with_global_thresholds(mut self, t: VerificationThresholds) -> Self { self.global_thresholds = Some(t); self }
     pub fn with_metrics_recorder(mut self, m: Arc<dyn ProcessingMetricsPort>) -> Self {
         self.metrics_recorder = Some(m);
+        self
+    }
+
+    /// Phase 202 B2: plugin IPC registry 명시 주입 (테스트용).
+    /// 미주입 시 build()에서 빈 `PluginRegistry::new()` 디폴트 (lesson 14 회피).
+    pub fn with_plugin_registry(
+        mut self,
+        r: Arc<file_pipeline_core::plugin::PluginRegistry>,
+    ) -> Self {
+        self.plugin_registry = Some(r);
         self
     }
 
@@ -256,6 +269,9 @@ impl ServiceBuilder {
             crossref_last_run: std::sync::Mutex::new(None),
             crossref_interval_secs: self.crossref_interval_secs,
             metrics_recorder: self.metrics_recorder,
+            plugin_registry: self.plugin_registry.unwrap_or_else(|| {
+                Arc::new(file_pipeline_core::plugin::PluginRegistry::new())
+            }),
         }
     }
 }
@@ -271,6 +287,13 @@ mod tests {
         assert_eq!(svc.crossref_similarity_threshold, 0.7);
         assert_eq!(svc.crossref_interval_secs, 0);
         assert!(svc.metrics_recorder.is_none());
+    }
+
+    #[tokio::test]
+    async fn builder_default_plugin_registry_is_empty() {
+        let base = tempfile::TempDir::new().unwrap();
+        let svc = ServiceBuilder::new(base.path()).build();
+        assert_eq!(svc.plugin_registry.count(), 0);
     }
 
     #[tokio::test]
