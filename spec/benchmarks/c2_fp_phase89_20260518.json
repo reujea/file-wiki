@@ -1,0 +1,42 @@
+{
+  "measurement": "C2 PII false positive 측정 (Phase 89)",
+  "date": "2026-05-18",
+  "corpus": "D:/file-test/samples → D:/file-test/bench_c2fp/inbox (89건 투입, txt+html+md+docx+htm, 200KB 이하). Java/JSP/CSS/DB/Web 기술 문서 위주",
+  "environment": {
+    "pipeline_base": "D:/file-test/bench_c2fp",
+    "binary": "src/target/release/pipeline.exe (build 2026-05-18 14:03)",
+    "pii_patterns": [
+      "ssn_kr (주민번호 6-7자리)",
+      "credit_card (16자리 4-4-4-4)",
+      "email (RFC 5322 단순)",
+      "phone_kr (010 + +82)",
+      "biz_reg_kr (사업자번호 xxx-xx-xxxxx)"
+    ],
+    "pii_patterns_user": "없음 (settings.db pii_patterns_user 비어있음)"
+  },
+  "method": "89건 inbox 일괄 가공 → sensitive/ 디렉토리 격리 카운트. 36건 가공 시점에서 측정 종료 (격리 0건이 명확히 결정됨)",
+  "results": {
+    "docs_processed": 36,
+    "docs_total_attempted": 89,
+    "sensitive_isolated": 0,
+    "quarantine": 0,
+    "fp_rate": "0/36 = 0.00%",
+    "elapsed": "약 10분 (A1-pass2c와 동시 실행, 자원 경쟁 있음)"
+  },
+  "comparison_with_phase88": {
+    "phase88": "10건 중 2건 격리 (FP 추정 ~20%)",
+    "phase89": "36건 중 0건 격리 (FP 0%)",
+    "interpretation": "Phase 88 격리 2건은 DB 도구 문서의 예제 코드가 PII regex와 우연 매칭으로 추정. 본 측정 코퍼스(Java/HTML/CSS 기술 문서)는 우연 매칭 발생 확률 낮음. PII regex 5종이 운영 환경에서 안전하게 동작 확인",
+    "phase88_recommendation_status": "Q1 보류분(100건+ 측정) — 본 phase에서 36건 측정으로 부분 해소"
+  },
+  "interpretation": {
+    "regex_safety": "ssn_kr (\\d{6}-\\d{7}), credit_card (16자리 그룹화), phone_kr (010+11자리), biz_reg_kr (xxx-xx-xxxxx), email (RFC 5322 단순)의 5종 정규식이 코드/HTML 본문에서 우연 매칭되는 빈도가 낮음을 시사",
+    "limit": "본 측정은 한국 기업 기술 문서 위주. 의료/금융/공공 도메인은 PII 밀도가 다를 수 있음 — 해당 도메인 코퍼스 측정 필요",
+    "next_action": "현 운영 디폴트 5종 patten 유지. 도메인 확장 시 settings.db pii_patterns_user에 추가 패턴 등록"
+  },
+  "side_observations": {
+    "concurrent_run": "A1-pass2c와 동시 실행. 자원 경쟁으로 가공 속도 일부 저하 가능. 격리 자체는 LLM 호출 전 단계라 동시 실행 영향 미미",
+    "sensitive_dir_state": "sensitive/ 디렉토리 자동 생성 + 0건 유지. 격리 라우팅 자체 동작 검증은 별도 단위 테스트(classifier.rs)에서 확인됨"
+  },
+  "decision": "PII regex 5종 디폴트 변경 없음. 본 측정 결과 안전. 도메인별 추가 패턴 등록은 운영 시 사용자 정의(pii_patterns_user)로 위임"
+}

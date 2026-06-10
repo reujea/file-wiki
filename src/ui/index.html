@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>file-pipeline Dashboard</title>
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+<div style="display:flex;align-items:center;gap:var(--spacing-md);margin-bottom:var(--spacing-sm)">
+  <h1 style="margin:0">Pipeline Manager</h1>
+  <button id="watcher-toggle" data-action="toggle-watcher" class="watcher-toggle active" title="inbox 감지 ON/OFF">
+    <span class="watcher-dot"></span>
+    <span class="watcher-label">감지 ON</span>
+  </button>
+  <button data-action="open-onboarding" class="btn btn-secondary" style="margin-left:auto;font-size:.78rem" title="처음 사용자를 위한 4단계 안내">
+    🧭 온보드
+  </button>
+  <button data-action="open-setup-assistant" class="btn btn-secondary" style="font-size:.78rem" title="Claude Code MCP로 AI와 대화하며 설정 리뷰">
+    🤖 AI 설정 도우미
+  </button>
+</div>
+
+<!-- Stats Cards -->
+<div class="header-toggle" data-action="toggle-header">
+  <span class="header-toggle-arrow" id="header-arrow">▼</span>
+  <span style="font-size:.72rem;color:var(--color-text-dim)">통계</span>
+</div>
+<div class="header-groups" id="header-groups">
+  <div class="header-group">
+    <div class="header-group-label">문서</div>
+    <div class="header-group-cards">
+      <div class="stat-card"><span class="stat-label">전체</span><span class="stat-value" id="stat-total">-</span></div>
+      <div class="stat-card"><span class="stat-label">처리중</span><span class="stat-value" id="stat-processing">-</span></div>
+      <div class="stat-card"><span class="stat-label">대기</span><span class="stat-value" id="stat-pending">-</span></div>
+      <div class="stat-card"><span class="stat-label">실패</span><span class="stat-value" id="stat-failed">-</span></div>
+    </div>
+  </div>
+  <div class="header-group">
+    <div class="header-group-label">지식 그래프</div>
+    <div class="header-group-cards">
+      <div class="stat-card"><span class="stat-label">노드</span><span class="stat-value" id="stat-kg-nodes">-</span></div>
+      <div class="stat-card"><span class="stat-label">엣지</span><span class="stat-value" id="stat-kg-edges">-</span></div>
+      <div class="stat-card"><span class="stat-label">고립</span><span class="stat-value" id="stat-isolated">-</span></div>
+    </div>
+  </div>
+  <div class="header-group">
+    <div class="header-group-label">토큰 사용</div>
+    <div class="header-group-cards">
+      <div class="stat-card"><span class="stat-label">입력</span><span class="stat-value" id="stat-tokens-in">-</span></div>
+      <div class="stat-card"><span class="stat-label">출력</span><span class="stat-value" id="stat-tokens-out">-</span></div>
+      <div class="stat-card"><span class="stat-label">호출</span><span class="stat-value" id="stat-api-calls">-</span></div>
+    </div>
+  </div>
+  <div class="header-group">
+    <div class="header-group-label">LLM 캐시
+      <button class="btn btn-sm btn-secondary" data-action="gc-llm-cache-now" style="margin-left:var(--spacing-xs);padding:2px 8px;font-size:.7rem" title="LRU GC 즉시 실행 (max_entries 초과분 삭제)">GC 실행</button>
+      <button class="btn btn-sm btn-secondary" data-action="clear-llm-cache" style="margin-left:var(--spacing-xs);padding:2px 8px;font-size:.7rem" title="모델/프롬프트 변경 후 사용">비우기</button>
+    </div>
+    <div class="header-group-cards">
+      <div class="stat-card"><span class="stat-label">엔트리</span><span class="stat-value" id="stat-llm-cache-entries">-</span></div>
+      <div class="stat-card"><span class="stat-label">총 hit</span><span class="stat-value" id="stat-llm-cache-hits">-</span></div>
+      <div class="stat-card"><span class="stat-label">평균 hit</span><span class="stat-value" id="stat-llm-cache-avg">-</span></div>
+      <div class="stat-card" title="마지막 LRU GC 시각"><span class="stat-label">최근 GC</span><span class="stat-value" id="stat-llm-cache-gc-at" style="font-size:.7rem">-</span></div>
+      <div class="stat-card" title="마지막 GC에서 삭제된 엔트리 수"><span class="stat-label">GC 삭제</span><span class="stat-value" id="stat-llm-cache-gc-deleted">-</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-action="switch-tab" data-tab="documents">Documents</div>
+  <div class="tab" data-action="switch-tab" data-tab="pipeline">Pipeline</div>
+  <div class="tab" data-action="switch-tab" data-tab="processing">처리 현황</div>
+  <div class="tab" data-action="switch-tab" data-tab="todos">Todos</div>
+  <div class="tab" data-action="switch-tab" data-tab="settings">Settings</div>
+  <div class="tab" data-action="switch-tab" data-tab="topics">Topics</div>
+</div>
+
+<!-- Tab: Documents (그래프 + 테이블 + 검색) -->
+<div class="tab-content active" id="tab-documents">
+  <!-- 검색 가이드 -->
+  <div style="margin-bottom:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm);background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius);font-size:.75rem;color:var(--color-text-dim)">
+    💡 <strong>검색 팁:</strong> 단어를 띄어쓰기로 구분하세요. 붙여쓰면 검색 정확도가 낮아집니다.
+    <span style="margin-left:var(--spacing-sm);color:var(--color-text-muted)">예시:</span>
+    <code style="background:rgba(56,189,248,0.1);padding:1px 4px;border-radius:3px">마케팅 전략 회의</code>
+    <code style="background:rgba(56,189,248,0.1);padding:1px 4px;border-radius:3px">Next.js 전환 보고서</code>
+    <code style="background:rgba(56,189,248,0.1);padding:1px 4px;border-radius:3px">4월 프로젝트 진행</code>
+  </div>
+
+  <!-- 검색/필터 -->
+  <div class="filter-bar">
+    <input type="text" id="search-query" placeholder="단어를 띄어쓰기로 구분하여 입력 (예: 마케팅 전략 회의)" style="flex:2">
+    <select id="doc-type-filter">
+      <option value="">전체 유형</option>
+    </select>
+    <input type="date" id="date-from" placeholder="시작일">
+    <input type="date" id="date-to" placeholder="종료일">
+    <button class="btn btn-primary" data-action="search">검색</button>
+  </div>
+
+  <!-- 벡터 그래프 -->
+  <h2 class="section-title">Knowledge Graph</h2>
+  <div class="kg-container">
+    <svg id="kg-svg" width="100%" height="300"></svg>
+  </div>
+
+  <!-- 문서 테이블 -->
+  <h2 class="section-title">문서 목록</h2>
+  <div class="panel">
+    <table class="doc-table" id="doc-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>유형</th>
+          <th>날짜</th>
+          <th>토픽</th>
+          <th>계층</th>
+          <th>접근수</th>
+        </tr>
+      </thead>
+      <tbody id="doc-table-body"></tbody>
+    </table>
+    <div id="doc-pagination"></div>
+  </div>
+
+  <!-- Document Detail -->
+  <div class="detail-panel" id="doc-detail">
+    <button class="close-btn" data-action="close-detail">닫기</button>
+    <h3 id="detail-title"></h3>
+    <pre id="detail-content"></pre>
+    <div id="detail-relations"></div>
+    <div id="detail-aux" class="detail-aux" style="display:none"></div>
+  </div>
+</div>
+
+<!-- Tab: Processing -->
+<div class="tab-content" id="tab-processing">
+  <!-- 상단: 2개 현황 카드 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-md);margin-bottom:var(--spacing-md)">
+    <!-- 문서 처리 현황 -->
+    <div class="card" style="padding:var(--spacing-md)">
+      <h3 style="margin-bottom:var(--spacing-sm)">문서 처리 현황</h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:var(--spacing-sm);margin-bottom:var(--spacing-sm)">
+        <div class="stat-card"><span class="stat-label">처리중</span><span class="stat-value" id="q-processing">-</span></div>
+        <div class="stat-card"><span class="stat-label">완료</span><span class="stat-value" id="q-done">-</span></div>
+        <div class="stat-card"><span class="stat-label">실패</span><span class="stat-value" id="q-failed">-</span></div>
+        <div class="stat-card"><span class="stat-label">대기</span><span class="stat-value" id="q-pending">-</span></div>
+      </div>
+      <button class="btn btn-primary" data-action="retry-failed" style="font-size:.75rem">실패 항목 재처리</button>
+    </div>
+    <!-- 교차 참조 현황 -->
+    <div class="card" style="padding:var(--spacing-md)">
+      <h3 style="margin-bottom:var(--spacing-sm)">교차 참조 현황</h3>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--spacing-sm)" id="processing-crossref-cards">
+        <div class="stat-card"><span class="stat-label">전체 관계</span><span class="stat-value" id="cr-total">-</span></div>
+        <div class="stat-card"><span class="stat-label">문서 수</span><span class="stat-value" id="cr-docs">-</span></div>
+        <div class="stat-card"><span class="stat-label">밀도</span><span class="stat-value" id="cr-density">-</span></div>
+      </div>
+      <div id="cr-by-type" style="font-size:.75rem;color:var(--color-text-dim);margin-top:var(--spacing-xs)"></div>
+    </div>
+  </div>
+
+  <!-- 조회/필터 -->
+  <div style="display:flex;gap:var(--spacing-sm);margin-bottom:var(--spacing-sm);align-items:center">
+    <input type="text" id="proc-search" placeholder="파일명/상태 검색..." style="flex:1;font-size:.82rem;padding:6px 10px;background:var(--color-bg);border:1px solid var(--color-border);color:var(--color-text);border-radius:4px">
+    <select id="proc-filter" style="font-size:.82rem;padding:6px;background:var(--color-bg);border:1px solid var(--color-border);color:var(--color-text);border-radius:4px">
+      <option value="all">전체</option>
+      <option value="processing">처리중</option>
+      <option value="done">완료</option>
+      <option value="failed">실패</option>
+      <option value="pending">대기</option>
+    </select>
+  </div>
+
+  <!-- 작업 내역 테이블 -->
+  <div id="processing-list"></div>
+
+  <!-- 페이징 -->
+  <div id="processing-pagination" style="display:flex;justify-content:center;gap:var(--spacing-sm);margin-top:var(--spacing-sm)"></div>
+
+  <!-- 상세 로그 패널 -->
+  <div id="processing-log-panel" class="processing-log-panel" style="display:none">
+    <div class="processing-log-header">
+      <h3 id="processing-log-title">Log</h3>
+      <button class="btn btn-secondary" data-action="close-processing-log" style="padding:2px 8px;font-size:.8rem">닫기</button>
+    </div>
+    <pre id="processing-log-content" class="processing-log-content"></pre>
+  </div>
+
+  <!-- 검증 영역 (이전 Verification 탭 통합) -->
+  <div style="margin-top:var(--spacing-lg);border-top:1px solid var(--color-border);padding-top:var(--spacing-md)">
+    <h3 style="margin-bottom:var(--spacing-sm);font-size:1rem">검증 결과</h3>
+    <div id="verification-results"></div>
+
+    <div class="card" style="margin-top:var(--spacing-md);padding:var(--spacing-md)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-sm)">
+        <h3 style="margin:0;font-size:.95rem">주간 검토 — 강한 주장</h3>
+        <button class="btn btn-secondary" data-action="run-lint-strong-claims" style="font-size:.75rem">↻ 즉시 실행</button>
+      </div>
+      <div style="font-size:.8rem;color:var(--color-text-muted);margin-bottom:var(--spacing-sm)">
+        가공본의 단정 표현(확실히/반드시/항상/100%/always/never 등)을 검출하여 사용자 검토 후보로 노출합니다. 자동 거부가 아닌 검토 권고입니다.
+      </div>
+      <div id="lint-strong-claims-result"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Todos -->
+<div class="tab-content" id="tab-todos">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:var(--spacing-sm)">
+    <div class="grid" style="flex:1;margin-bottom:0">
+      <div class="card"><h3>Pending</h3><div class="value" id="todo-pending">-</div></div>
+      <div class="card"><h3>Completed</h3><div class="value" id="todo-completed">-</div></div>
+    </div>
+    <button class="btn btn-secondary" data-action="refresh-todos" style="font-size:.75rem;margin-left:var(--spacing-md)">↻ 새로고침</button>
+  </div>
+  <div class="panel" id="todo-list"></div>
+</div>
+
+<!-- Verification 탭 통합됨 (Processing 탭 안으로 이동) -->
+
+<!-- Tab: Topics -->
+<div class="tab-content" id="tab-topics">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:var(--spacing-sm)">
+    <button class="btn btn-secondary" data-action="refresh-topics" style="font-size:.75rem">↻ 새로고침</button>
+  </div>
+  <div class="topics-list" id="topics-list"></div>
+</div>
+
+
+
+<!-- Tab: Pipeline (Phase 66: 좌 사이드바 + 가운데 3탭 + 우 인스펙터) -->
+<div class="tab-content" id="tab-pipeline">
+  <div class="pb-layout" id="pb-layout">
+    <!-- 좌측: 시뮬레이션 + 로그 -->
+    <div class="pb-sidebar" id="pb-sidebar"></div>
+    <div class="pb-divider" id="pb-divider-left"></div>
+    <!-- 가운데: 3탭 (가공/검색/배치) -->
+    <div class="pb-main" id="pb-main">
+      <div class="pb-midtabs" id="pb-midtabs"></div>
+      <!-- 가공 파이프라인 (Phase 67: 21노드 플로우만) -->
+      <div class="pb-midtab-content" id="pb-mid-process">
+        <div class="pb-flow-strip" id="pb-canvas"></div>
+      </div>
+      <!-- 검색 파이프라인 -->
+      <div class="pb-midtab-content" id="pb-mid-search" style="display:none">
+        <div id="pb-search-pipeline"></div>
+      </div>
+      <!-- 배치 설정 -->
+      <div class="pb-midtab-content" id="pb-mid-batch" style="display:none">
+        <div id="pb-batch-config"></div>
+      </div>
+    </div>
+    <div class="pb-divider" id="pb-divider-right"></div>
+    <!-- 우측: 인스펙터 (노드/항목 클릭 시 설명 + 설정) -->
+    <div class="pb-inspector" id="pb-inspector"></div>
+  </div>
+</div>
+
+<!-- Phase 66: Settings 탭 복원 (3그룹: 크레덴셜 / 일반 / 마이그레이션) -->
+<div class="tab-content" id="tab-settings">
+  <div class="settings-toolbar">
+    <input type="text" id="settings-search" class="settings-search-input" placeholder="설정 이름으로 검색...">
+  </div>
+  <div id="settings-status"></div>
+
+  <!-- Phase 100: 5 운영 카드를 좌측 "운영" 그룹 콘텐츠로 이관. settings-form이 운영 그룹 활성 시 본 컨테이너 채움 -->
+  <div id="settings-ops-cards" style="display:none">
+    <div class="settings-section" id="decision-log-section" style="margin-bottom:var(--spacing-md);padding:var(--spacing-sm);border:1px dashed var(--color-border);border-radius:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-sm)">
+        <h4 style="color:var(--color-primary);margin:0">🧠 자동 추천</h4>
+        <div>
+          <button class="btn btn-secondary btn-sm" data-action="run-auto-suggest" style="font-size:.75rem">분석 실행</button>
+          <button class="btn btn-secondary btn-sm" data-action="refresh-decision-log" style="font-size:.75rem">새로고침</button>
+        </div>
+      </div>
+      <p style="color:var(--color-text-dim);font-size:.75rem;margin:0 0 var(--spacing-sm) 0">
+        누적 검색 mode·CRAG 신뢰도·처리 메트릭에서 자동 도출된 설정 추천. accept 시 pipeline.toml에 즉시 적용 (.bak 백업).
+      </p>
+      <div style="display:flex;gap:var(--spacing-sm);align-items:center;margin-bottom:var(--spacing-sm);font-size:.72rem">
+        <label>상태:
+          <select id="dl-filter-status" data-action="dl-filter-change" style="font-size:.72rem">
+            <option value="all">전체</option>
+            <option value="suggested" selected>검토 대기</option>
+            <option value="accepted">적용됨</option>
+            <option value="rejected">거부됨</option>
+            <option value="critical_skipped">critical 스킵</option>
+          </select>
+        </label>
+        <label>출처:
+          <select id="dl-filter-source" data-action="dl-filter-change" style="font-size:.72rem">
+            <option value="all" selected>전체</option>
+            <option value="auto_suggestion">자동 추천</option>
+            <option value="setup_review">설정 도우미</option>
+            <option value="setup_modules">동작 모듈</option>
+          </select>
+        </label>
+        <label>정렬:
+          <select id="dl-filter-sort" data-action="dl-filter-change" style="font-size:.72rem">
+            <option value="desc" selected>최신순</option>
+            <option value="asc">오래된순</option>
+          </select>
+        </label>
+        <span id="dl-filter-count" style="color:var(--color-text-dim);margin-left:auto"></span>
+      </div>
+      <div id="decision-log-list" style="font-size:.78rem">
+        <p style="color:var(--color-text-dim)">로딩 중...</p>
+      </div>
+    </div>
+    <div class="settings-section" id="c1-thresholds-section" style="margin-bottom:var(--spacing-md);padding:var(--spacing-sm);border:1px dashed var(--color-border);border-radius:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-sm)">
+        <h4 style="color:var(--color-primary);margin:0">⚙️ 자동 추천 임계값</h4>
+        <button class="btn btn-secondary btn-sm" data-action="refresh-c1-thresholds" style="font-size:.75rem">새로고침</button>
+      </div>
+      <p style="color:var(--color-text-dim);font-size:.75rem;margin:0 0 var(--spacing-sm) 0">
+        자동 추천이 발화하는 임계값. 비워두면 코드 디폴트 사용. 5K 코퍼스 측정 후 조정 권장.
+      </p>
+      <div id="c1-thresholds-list" style="font-size:.78rem">
+        <p style="color:var(--color-text-dim)">로딩 중...</p>
+      </div>
+    </div>
+    <div class="settings-section" id="pii-patterns-section" style="margin-bottom:var(--spacing-md);padding:var(--spacing-sm);border:1px dashed var(--color-border);border-radius:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-sm)">
+        <h4 style="color:var(--color-primary);margin:0">🔒 PII 검출 패턴</h4>
+        <button class="btn btn-secondary btn-sm" data-action="refresh-pii-patterns" style="font-size:.75rem">새로고침</button>
+      </div>
+      <p style="color:var(--color-text-dim);font-size:.75rem;margin:0 0 var(--spacing-sm) 0">
+        본문 PII 감지 시 sensitive/ 폴더로 격리 (LLM 미호출). 디폴트 5종 + 사용자 정의 추가 가능. 추가/제거는 앱 재시작 후 반영.
+      </p>
+      <div id="pii-patterns-list" style="font-size:.78rem">
+        <p style="color:var(--color-text-dim)">로딩 중...</p>
+      </div>
+      <div style="margin-top:var(--spacing-sm);padding-top:var(--spacing-sm);border-top:1px dashed var(--color-border);font-size:.75rem">
+        <strong style="display:block;margin-bottom:4px">새 패턴 추가</strong>
+        <div style="display:flex;gap:4px;align-items:flex-start;flex-wrap:wrap">
+          <input id="pii-new-name" placeholder="이름 (예: account_kr)" style="flex:0 0 9em;font-size:.72rem;padding:3px 6px">
+          <input id="pii-new-pattern" placeholder="정규식 (Rust regex)" style="flex:1;min-width:14em;font-size:.72rem;padding:3px 6px;font-family:var(--font-mono)">
+          <button class="btn btn-primary btn-sm" data-action="pii-add" style="font-size:.72rem;padding:3px 8px">추가</button>
+        </div>
+        <p style="color:var(--color-text-dim);font-size:.7rem;margin:4px 0 0 0">regex 컴파일 실패 시 추가 거부됩니다.</p>
+      </div>
+    </div>
+
+    <!-- Phase 91 A2: 출력 PII mask 토글 -->
+    <div class="settings-section" id="pii-mask-section" style="margin-bottom:var(--spacing-md);padding:var(--spacing-sm);border:1px dashed var(--color-border);border-radius:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-sm)">
+        <h4 style="color:var(--color-primary);margin:0">🛡 출력 PII 마스킹</h4>
+        <label style="display:flex;align-items:center;gap:6px;font-size:.78rem">
+          <input type="checkbox" id="pii-mask-toggle" data-action="pii-mask-toggle">
+          <span>활성화</span>
+        </label>
+      </div>
+      <p style="color:var(--color-text-dim);font-size:.72rem;margin:0">
+        검색 결과·MCP 응답의 PII(이메일·전화·주민번호·신용카드·사업자번호 + 사용자 정의 패턴)를 <code>[REDACTED:종류]</code>로 마스킹. 디폴트 활성 (안전 우선).
+      </p>
+    </div>
+
+    <!-- Phase 92 H3: MCP 도구 다차원 분류 카탈로그 -->
+    <div class="settings-section" id="mcp-catalog-section" style="margin-bottom:var(--spacing-md);padding:var(--spacing-sm);border:1px dashed var(--color-border);border-radius:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--spacing-sm)">
+        <h4 style="color:var(--color-primary);margin:0">🧰 MCP 도구 분류</h4>
+        <button class="btn btn-secondary btn-sm" data-action="refresh-mcp-catalog" style="font-size:.72rem">↻ 새로고침</button>
+      </div>
+      <p style="color:var(--color-text-dim);font-size:.72rem;margin:0 0 var(--spacing-sm) 0">
+        Claude Code에서 호출되는 MCP 도구의 카테고리·상태 변경·비용 분류. 호출 게이트 없음 — 표시만.
+      </p>
+      <div id="mcp-catalog-result"></div>
+    </div>
+  </div>
+
+  <div class="settings-layout">
+    <div class="settings-nav" id="settings-nav"></div>
+    <div class="settings-content" id="settings-form"></div>
+  </div>
+  <div class="settings-footer">
+    <button class="btn btn-primary" data-action="save-settings">저장</button>
+    <button class="btn btn-secondary" data-action="reset-settings">초기화</button>
+    <span style="margin-left:auto;display:flex;gap:var(--spacing-sm)">
+      <button class="btn btn-secondary" data-action="import-config">📂 pipeline.toml 가져오기</button>
+      <button class="btn btn-secondary" data-action="export-config">📁 pipeline.toml 내보내기</button>
+    </span>
+  </div>
+</div>
+
+<script src="dashboard.js"></script>
+</body>
+</html>

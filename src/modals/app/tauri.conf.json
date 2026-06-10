@@ -1,0 +1,30 @@
+{
+  "$schema": "https://v2.tauri.app/schema.json",
+  "productName": "File Pipeline",
+  "version": "0.1.0",
+  "identifier": "com.file-pipeline.app",
+  "build": {
+    "frontendDist": "../../ui"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "File Pipeline Dashboard",
+        "width": 1200,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/icon.ico"
+    ]
+  }
+}

@@ -1,0 +1,530 @@
+# Phase 76: 설정 추천 룰 테이블
+#
+# 외부 전문가 답변(prd/queries/initial-setup-advisor-experts.answer.md)의
+# §3.2~3.4 매트릭스를 그대로 이관. evidence는 모두 heuristic으로 시작하며,
+# 트리거 #3 (5K 코퍼스 + 골든셋) 측정 후 benchmark로 승격할 예정.
+#
+# 형식:
+#   [[rule]]
+#   setting = "section.field"          # PipelineConfig path
+#   recommend = <value>                # JSON 호환 값
+#   reason = "한국어 근거"
+#   priority = "P0" | "P1" | "P2"
+#   risk = "low" | "medium" | "high" | "critical"
+#   evidence = "heuristic" | "benchmark" | "literature" | "user_feedback"
+#   confidence = "low" | "medium" | "high"
+#   reversible = true | false           # 기본 true
+#   restart_required = true | false     # 기본 false
+#
+#   [rule.condition]
+#   sensitivity = "high"                # 해당 축에 매칭 시
+#   volume = "heavy"
+#   search_intent = "precision"
+#   collaboration = "team"
+#
+#   [rule.condition.content]
+#   kind = "meeting" | "research" | "code" | "legal" | "general"
+#   min_ratio = 0.5                     # content_mix에서 해당 유형이 이 비율 이상
+
+# ─────────────────────────────────────────────────────────────────────
+# content_type 축
+# ─────────────────────────────────────────────────────────────────────
+
+# meeting
+[[rule]]
+setting = "chunking.target_bytes"
+recommend = 2000
+reason = "회의록은 발화/안건 단위가 길어 1500B에서 문맥 절단 빈도가 높음. 2000B 권장."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "meeting"
+min_ratio = 0.5
+
+[[rule]]
+setting = "crossref.cap_related"
+recommend = 30
+reason = "회의록은 후속 회의·결정 사항과 자주 연결됨. RelatedTopic cap 상향."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "meeting"
+min_ratio = 0.5
+
+[[rule]]
+setting = "crossref.similarity_threshold"
+recommend = 0.75
+reason = "회의록은 어휘 변동이 커 임계 완화 (관계 누락 줄임)."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "meeting"
+min_ratio = 0.5
+
+[[rule]]
+setting = "schedule.lint_interval_hours"
+recommend = 6
+reason = "회의록은 정기적 정합성 검사로 결정/액션 누수 방지."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "meeting"
+min_ratio = 0.5
+
+[[rule]]
+setting = "search.window_lines"
+recommend = 8
+reason = "회의록 매칭은 발화 단위 ±8줄 컨텍스트가 가독성 우수."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "meeting"
+min_ratio = 0.5
+
+[[rule]]
+setting = "chunking.overlap_sentences"
+recommend = 3
+reason = "회의록 청크 경계의 발화 절단 줄임."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "meeting"
+min_ratio = 0.5
+
+[[rule]]
+setting = "compression.original_ttl_days"
+recommend = 90
+reason = "회의록 원본은 90일 보관 권장 (회의 후 follow-up 주기)."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "meeting"
+min_ratio = 0.5
+
+# research
+[[rule]]
+setting = "chunking.target_bytes"
+recommend = 1500
+reason = "논문/연구는 단락 단위가 적절. 기본값 유지를 명시 추천."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "chunking.preserve_code_blocks"
+recommend = true
+reason = "연구 문서의 수식/코드 블록 보존 필수."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "chunking.overlap_sentences"
+recommend = 3
+reason = "논문은 인접 단락 참조가 잦아 오버랩 증가."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "rerank.enabled"
+recommend = true
+reason = "연구 검색은 정밀도 우선 — Cross-Encoder 리랭킹 활성."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "rerank.top_n"
+recommend = 30
+reason = "연구는 후보군을 넓게 두고 리랭킹으로 선별."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "crossref.similarity_threshold"
+recommend = 0.85
+reason = "연구는 노이즈 관계를 줄여야 함 — 임계 상향."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "crossref.supersedes_threshold"
+recommend = 0.93
+reason = "논문 개정/대체 판정 임계 약간 완화."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "crossref.cap_related"
+recommend = 30
+reason = "연구는 인용/참조 관계가 많음."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "verification.thresholds"
+recommend = { structure_min = 0.5, compression_min = 0.05, compression_max = 1.5, keyword_coverage_min = 0.5, keyword_completeness_min = 0.3, rouge_l_min = 0.5, entity_preservation_min = 0.5 }
+reason = "연구 가공은 ROUGE-L 0.5 기준으로 정밀도 우선."
+priority = "P0"
+risk = "medium"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "compression.original_ttl_days"
+recommend = 0
+reason = "연구 자료는 장기 보존 (0=무제한)."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "preprocessing.pdf_tool"
+recommend = "marker"
+reason = "연구 PDF는 marker가 수식·표·인용 보존성 우수 (pip install marker-pdf 필요)."
+priority = "P0"
+risk = "medium"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "search.window_lines"
+recommend = 5
+reason = "연구는 단락 단위 ±5줄로 핵심 문장 표시."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+[[rule]]
+setting = "search.mmr_lambda"
+recommend = 0.7
+reason = "연구는 관련도 우선 (다양성보다 정밀도)."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "research"
+min_ratio = 0.5
+
+# code
+[[rule]]
+setting = "chunking.target_bytes"
+recommend = 2500
+reason = "코드 블록은 함수/클래스 단위 보존을 위해 큰 청크가 유리."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+[[rule]]
+setting = "chunking.preserve_code_blocks"
+recommend = true
+reason = "코드 문서는 코드펜스 분할 금지."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+[[rule]]
+setting = "chunking.overlap_sentences"
+recommend = 1
+reason = "코드는 단위가 명확해 오버랩 최소화로 충분."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+[[rule]]
+setting = "crossref.cap_related"
+recommend = 15
+reason = "코드 문서는 의존 관계가 직접적이라 cap 축소."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+[[rule]]
+setting = "crossref.similarity_threshold"
+recommend = 0.80
+reason = "코드는 표준 라이브러리 호출이 겹쳐 임계 약간 상향."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+[[rule]]
+setting = "search.window_lines"
+recommend = 10
+reason = "코드 매칭은 함수 컨텍스트 ±10줄 필요."
+priority = "P0"
+risk = "low"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+[[rule]]
+setting = "preprocessing.pdf_tool"
+recommend = "marker"
+reason = "코드 포함 PDF는 marker가 보존성 우수."
+priority = "P1"
+risk = "medium"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+[[rule]]
+setting = "compression.original_ttl_days"
+recommend = 180
+reason = "코드 원본은 6개월 보관 권장 (리팩토링 추적)."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+[[rule]]
+setting = "rerank.enabled"
+recommend = true
+reason = "코드 검색은 정밀도 우선 — 리랭킹 활성."
+priority = "P1"
+risk = "low"
+[rule.condition.content]
+kind = "code"
+min_ratio = 0.5
+
+# ─────────────────────────────────────────────────────────────────────
+# sensitivity 축
+# ─────────────────────────────────────────────────────────────────────
+
+[[rule]]
+setting = "sensitive.extensions"
+recommend = [".env", ".pem", ".key", ".p12", ".pfx", ".keystore", ".crt", ".cer"]
+reason = "민감도 high — 자격증명/키 파일 격리 필수."
+priority = "P0"
+risk = "low"
+[rule.condition]
+sensitivity = "high"
+
+[[rule]]
+setting = "sensitive.keywords"
+recommend = ["password", "secret", "private_key", "api_key", "token", "credential", "비밀번호", "주민등록번호", "계좌번호"]
+reason = "민감도 high — 키워드 기반 격리 강화."
+priority = "P0"
+risk = "low"
+[rule.condition]
+sensitivity = "high"
+
+[[rule]]
+setting = "compression.encrypt_sensitive"
+recommend = true
+reason = "민감도 high — 민감 디렉토리 암호화 (예약 기능)."
+priority = "P0"
+risk = "low"
+[rule.condition]
+sensitivity = "high"
+
+[[rule]]
+setting = "logging.level"
+recommend = "warn"
+reason = "민감도 high — 로그에 콘텐츠 단편 노출을 줄임."
+priority = "P1"
+risk = "low"
+[rule.condition]
+sensitivity = "high"
+
+# regulated (high보다 강함)
+[[rule]]
+setting = "sensitive.extensions"
+recommend = [".env", ".pem", ".key", ".p12", ".pfx", ".keystore", ".crt", ".cer", ".pgp", ".gpg"]
+reason = "regulated — 추가 인증서/암호 파일 격리."
+priority = "P0"
+risk = "low"
+[rule.condition]
+sensitivity = "regulated"
+
+[[rule]]
+setting = "compression.encrypt_sensitive"
+recommend = true
+reason = "regulated — 암호화 필수."
+priority = "P0"
+risk = "low"
+[rule.condition]
+sensitivity = "regulated"
+
+[[rule]]
+setting = "logging.level"
+recommend = "warn"
+reason = "regulated — 콘텐츠 로그 누출 방지."
+priority = "P0"
+risk = "low"
+[rule.condition]
+sensitivity = "regulated"
+
+# ─────────────────────────────────────────────────────────────────────
+# volume 축
+# ─────────────────────────────────────────────────────────────────────
+
+[[rule]]
+setting = "max_workers"
+recommend = 8
+reason = "heavy 볼륨 (>500/주) — 병렬도 상향. 메모리 사용량 증가 주의."
+priority = "P0"
+risk = "medium"
+[rule.condition]
+volume = "heavy"
+
+[[rule]]
+setting = "crossref.minhash_force_enable"
+recommend = true
+reason = "heavy 볼륨 — MinHash LSH 강제 활성화로 교차참조 O(N) 회피."
+priority = "P0"
+risk = "low"
+[rule.condition]
+volume = "heavy"
+
+[[rule]]
+setting = "notification_batch.summary_interval_secs"
+recommend = 60
+reason = "heavy 볼륨 — 알림 배치 주기 늘려 노이즈 완화."
+priority = "P1"
+risk = "low"
+[rule.condition]
+volume = "heavy"
+
+[[rule]]
+setting = "memory_tier.hot_days"
+recommend = 3
+reason = "heavy 볼륨 — hot 윈도 좁혀 자주 접근 문서만 우선."
+priority = "P1"
+risk = "low"
+[rule.condition]
+volume = "heavy"
+
+[[rule]]
+setting = "vector_db.rrf_multiplier"
+recommend = 2
+reason = "heavy 볼륨 — prefetch 배수 축소로 메모리 사용량 절감."
+priority = "P1"
+risk = "low"
+[rule.condition]
+volume = "heavy"
+
+[[rule]]
+setting = "retention.enabled"
+recommend = true
+reason = "heavy 볼륨 — 디스크 가득참 방지 위해 자동 purge 권장. 적용은 신중하게 (Critical)."
+priority = "P0"
+risk = "critical"
+[rule.condition]
+volume = "heavy"
+
+[[rule]]
+setting = "max_workers"
+recommend = 2
+reason = "light 볼륨 (<50/주) — CPU 절약."
+priority = "P1"
+risk = "low"
+[rule.condition]
+volume = "light"
+
+[[rule]]
+setting = "memory_tier.hot_days"
+recommend = 14
+reason = "light 볼륨 — hot 윈도 넓혀 검색 우선순위 안정."
+priority = "P1"
+risk = "low"
+[rule.condition]
+volume = "light"
+
+# ─────────────────────────────────────────────────────────────────────
+# search_intent 축
+# ─────────────────────────────────────────────────────────────────────
+
+[[rule]]
+setting = "rerank.enabled"
+recommend = true
+reason = "정밀 검색 중심 — Cross-Encoder 리랭킹 활성."
+priority = "P0"
+risk = "low"
+[rule.condition]
+search_intent = "precision"
+
+[[rule]]
+setting = "search.mmr_lambda"
+recommend = 0.7
+reason = "정밀 검색 — 관련도 가중치 증가."
+priority = "P1"
+risk = "low"
+[rule.condition]
+search_intent = "precision"
+
+[[rule]]
+setting = "search.mmr_lambda"
+recommend = 0.3
+reason = "탐색 검색 — 다양성 가중치 증가."
+priority = "P1"
+risk = "low"
+[rule.condition]
+search_intent = "exploration"
+
+[[rule]]
+setting = "search.time_weight"
+recommend = 0.30
+reason = "시간 우선 검색 — 최근 문서 boost 강화."
+priority = "P0"
+risk = "low"
+[rule.condition]
+search_intent = "temporal"
+
+# ─────────────────────────────────────────────────────────────────────
+# collaboration 축
+# ─────────────────────────────────────────────────────────────────────
+
+[[rule]]
+setting = "schedule.lint_interval_hours"
+recommend = 12
+reason = "팀 협업 — 정기 lint 주기 단축."
+priority = "P1"
+risk = "low"
+[rule.condition]
+collaboration = "small_team"
+
+[[rule]]
+setting = "schedule.lint_interval_hours"
+recommend = 6
+reason = "팀 협업 — lint 주기 더 짧게 (다인 편집 충돌 탐지)."
+priority = "P1"
+risk = "low"
+[rule.condition]
+collaboration = "team"

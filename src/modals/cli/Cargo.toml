@@ -1,0 +1,35 @@
+[package]
+name = "file-pipeline-cli"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "pipeline"
+path = "src/main.rs"
+
+[dependencies]
+file-pipeline-core    = { path = "../../crates/core" }
+file-pipeline-adapters = { path = "../../crates/adapters" }
+file-pipeline-shared  = { path = "../../crates/shared" }
+anyhow                = { workspace = true }
+serde                 = { workspace = true }
+serde_json            = { workspace = true }
+tokio                 = { workspace = true }
+tracing               = { workspace = true }
+tracing-subscriber    = { workspace = true }
+clap                  = { workspace = true }
+chrono                = { workspace = true }
+notify                = { workspace = true }
+dirs                  = { workspace = true }
+rmcp                  = { workspace = true }
+sha2                  = { workspace = true }
+hex                   = { workspace = true }
+
+[dependencies.tempfile]
+version = "3"
+
+[dev-dependencies]
+async-trait = { workspace = true }
+chrono      = { workspace = true }
+reqwest     = { workspace = true }
+zip         = { workspace = true }

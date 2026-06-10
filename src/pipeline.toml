@@ -1,0 +1,144 @@
+version = "1"
+credentials = []
+max_workers = 4
+hooks = []
+
+[paths]
+extra_inboxes = []
+
+[compression]
+zstd_level = 3
+original_ttl_days = 30
+compress_processed = true
+encrypt_sensitive = false
+
+[vector_db]
+backend = "sqlite"
+semantic_dup_threshold = 0.029999999329447746
+search_top_k = 5
+dim = 1024
+rrf_multiplier = 3
+
+[embedding]
+default_model = "fastembed"
+
+[notification]
+
+[verification]
+enabled = true
+llm_hallucination_check = false
+max_retry = 1
+on_fail = "quarantine_with_notify"
+
+[models]
+classify_model = "sonnet"
+process_model = "sonnet"
+verify_model = "sonnet"
+
+[llm]
+provider = "claude_cli"
+ollama_url = "http://localhost:11434"
+ollama_model = "llama3"
+openai_model = "gpt-4o"
+gemini_model = "gemini-2.0-flash"
+fallback_providers = []
+llm_cache_enabled = true
+llm_cache_max_entries = 10000
+
+[preprocessing]
+pdf_tool = "none"
+ocr_tool = "none"
+docx_tool = "none"
+xlsx_tool = "none"
+pptx_tool = "none"
+auto_merge_threshold = 5
+max_topic_chars = 10000
+
+[sensitive]
+keywords = []
+extensions = []
+
+[logging]
+level = "info"
+file = true
+console = true
+max_mb = 100
+
+[schedule]
+lint_interval_hours = 6
+lint_weekly_hours = 168
+lint_monthly_hours = 720
+fragment_threshold = 100
+fragment_group_trigger = 5
+auto_suggest_interval_hours = 4
+
+[[pipelines.steps]]
+type = "preprocess"
+pdf_tool = "none"
+ocr_tool = "none"
+
+[[pipelines.steps]]
+type = "llm"
+
+[[pipelines.steps]]
+type = "verify"
+enabled = true
+
+[chunking]
+semantic_enabled = true
+target_bytes = 1500
+max_bytes = 2500
+overlap_sentences = 2
+preserve_code_blocks = true
+preserve_tables = false
+
+[rerank]
+enabled = true
+provider = "fastembed"
+top_n = 20
+
+[remote_storage]
+enabled = false
+provider = "network"
+notion_mode = "attach"
+
+[crossref]
+enabled = true
+mode = "auto"
+similarity_threshold = 0.800000011920929
+supersedes_threshold = 0.949999988079071
+keyword_overlap_min = 3
+top_k = 3
+cap_supersedes = 2
+cap_updates = 5
+cap_related = 20
+cap_references = 10
+cap_incoming = 0
+minhash_force_enable = false
+minhash_min_docs = 3000
+metadata_blocking = false
+flush_interval_secs = 30
+
+[retention]
+enabled = false
+days = 90
+targets = ["originals"]
+interval_hours = 24
+
+[memory_tier]
+hot_days = 7
+warm_days = 30
+cold_days = 90
+
+[search]
+window_lines = 5
+mmr_lambda = 0.5
+sparse_weight = 1.0
+time_weight = 0.10000000149011612
+expand_kg_hops = 0
+diversity_threshold = 0
+hyde_enabled = false
+hyde_min_results = 3
+
+[notification_batch]
+summary_interval_secs = 30

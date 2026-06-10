@@ -1,0 +1,66 @@
+{
+  "name": "회귀 게이트 baseline (Phase 200 진입 전)",
+  "date": "2026-06-05",
+  "context": "P-2 항목 — M-1 메타 룰 17 강화 정식 승격 + S-1/S-4/S-6 직후. Phase 200 시리즈 진입 전 기준선 + Phase 209 종결 비교 기준",
+  "scripts_total": 8,
+  "results": {
+    "dead_selector_scan.sh": {
+      "category": "gate",
+      "exit": 0,
+      "note": "94 ID 모두 일치"
+    },
+    "audit_stage_check.sh": {
+      "category": "gate",
+      "exit": 0,
+      "note": "모든 stage 메타 룰 24 후보 명명 규칙 준수 (10 정적 + remote.* 동적 prefix)"
+    },
+    "release_rebuild_required.sh": {
+      "category": "gate",
+      "exit": 1,
+      "changed_files": 13,
+      "note": "Phase 107 + Phase A/B/E 누적 + 본 세션 lesson 71 cross-build 이후 마커 stale — 정상 동작 (메타 룰 17 강화 의무 미준수 상태 가시화)"
+    },
+    "gui_http_smoke.sh": {
+      "category": "gate",
+      "exit": 0,
+      "note": "5/5 PASS (6탭 통합 반영 후). 사이드 발견 #G1 동시 해소 — Phase 107 verification→processing 흡수 미반영을 본 baseline 측정에서 발견 + 즉시 수정"
+    },
+    "release_redeploy.sh": {
+      "category": "gate",
+      "exit": 1,
+      "note": "source binary 부재 (재빌드 미실시) — 정상 동작. release_rebuild_required와 의존 체인"
+    },
+    "action_catalog.sh --count": {
+      "category": "catalog",
+      "count": 72,
+      "previous_baseline": 68,
+      "delta": "+4",
+      "note": "Phase 107 +1 (get_file_log) + Phase A/B/E + 본질 재정의 누적. architecture.md 수치 동기화 필요"
+    },
+    "empty_state_audit.sh": {
+      "category": "inspection",
+      "exit": 0,
+      "note": "빈 객체 truthy 가드 후보 0건"
+    },
+    "data_flow_trace.sh search": {
+      "category": "debugging",
+      "exit": 0,
+      "note": "5단계 추적 정상 (index.html → dashboard.js → API.search → commands.rs → core)"
+    }
+  },
+  "side_findings": [
+    {
+      "id": "G1",
+      "script": "gui_http_smoke.sh",
+      "issue": "7탭 grep stale (Phase 107 verification 흡수 미반영)",
+      "meta_rule": "30 (spec/스크립트 본문 phase별 즉시 갱신 의무 자기 위반)",
+      "resolved": "본 baseline 측정 중 즉시 수정 (6탭으로 변경)",
+      "follow_up": "lesson 등재 후보 — baseline 측정 자체가 도구 stale 발굴 메커니즘"
+    }
+  ],
+  "action_items": [
+    "release_rebuild_required FAIL → 사용자 결정 트리거 후 release 재빌드 + release_redeploy --apply",
+    "action_catalog 72 → architecture.md \"Tauri commands 66 → 72\" 또는 \"GUI 액션 카탈로그\" 수치 동기화 (별도 트리거)"
+  ],
+  "next_phase_209_comparison": "본 baseline 보존 — Phase 209 회귀 게이트 측정 시 비교 기준 (3회 중앙값 + 메타 룰 4)"
+}

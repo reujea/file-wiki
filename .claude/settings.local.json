@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm -rf /tmp/file-pipeline-llm-smoke/*)",
+      "Bash(rm -f C:/dev/claude_workspaces/file-pipeline/src/target/release/.local-store.json C:/dev/claude_workspaces/file-pipeline/src/target/release/.local-store.vectors)",
+      "Bash(PIPELINE_BASE=/tmp/file-pipeline-llm-smoke C:/dev/claude_workspaces/file-pipeline/src/target/release/pipeline.exe stats)",
+      "Read(//d/file-test/bench_g1_repro/**)",
+      "Bash(rm -rf originals/* processed/* logs/* .local-store.json .compile-state.json .work-queue.json)"
+    ]
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "measurement": "B-1: 트리거 #2 MinHash + #4 Metadata blocking 5변형 비교 (Phase 89)",
+  "date": "2026-05-18",
+  "corpus": "D:/file-test/samples (지원 확장자만 485 파일)",
+  "method": "modals/cli/tests/bench_real_corpus.rs::bench_real_corpus_variants (cargo test --release, BENCH_CORPUS_DIR + HashEmbedder + RealCorpusLlm)",
+  "elapsed_total_s": 306.30,
+  "files_filtered": 485,
+  "files_total_in_corpus": 1211,
+  "results": {
+    "baseline_0.7": {
+      "time_s": 33.07,
+      "ok": 485,
+      "relations": 11166
+    },
+    "threshold_0.8": {
+      "time_s": 26.69,
+      "ok": 485,
+      "relations": 2848,
+      "vs_baseline_time_pct": -19.3,
+      "vs_baseline_relations_pct": -74.5,
+      "status": "✅ 이미 디폴트 적용 (Phase 85)"
+    },
+    "minhash_force": {
+      "time_s": 31.99,
+      "ok": 485,
+      "relations": 8940,
+      "vs_baseline_time_pct": -3.3,
+      "vs_baseline_relations_pct": -19.9,
+      "status": "❌ 디폴트 변경 보류 — threshold 0.8 -74.5% 대비 부차적"
+    },
+    "metadata_blocking": {
+      "time_s": 34.13,
+      "ok": 485,
+      "relations": 11094,
+      "vs_baseline_time_pct": 3.2,
+      "vs_baseline_relations_pct": -0.6,
+      "status": "❌ 디폴트 변경 보류 — 사실상 무효과 (-0.6%). doc_type 다양성 부족 추정"
+    },
+    "all_combined": {
+      "time_s": 33.80,
+      "ok": 485,
+      "relations": 2242,
+      "vs_baseline_time_pct": 2.2,
+      "vs_baseline_relations_pct": -79.9,
+      "status": "❌ 과적용"
+    }
+  },
+  "decision": {
+    "trigger_2_minhash": "디폴트 변경 보류 — threshold 0.8가 이미 -74.5% 관계 감소, MinHash 추가 효과 미미",
+    "trigger_4_metadata_blocking": "디폴트 변경 보류 — 관계 -0.6% (무효과). 본 코퍼스 doc_type 다양성 부족 (Java/JSP/CSS/DB/Web 기술문서 위주)",
+    "next_action": "두 인프라(crossref.minhash_force / crossref.metadata_blocking) 즉시 토글 가능 유지. 사용자가 다른 도메인 코퍼스 진입 시 재측정"
+  },
+  "comparison_with_phase86_485": {
+    "phase86_485": "MinHash -19.9% 관계 / Metadata blocking -0.6% 관계",
+    "phase89_485": "MinHash -19.9% 관계 / Metadata blocking -0.6% 관계",
+    "interpretation": "동일 코퍼스 동일 결과 — 측정 재현성 검증. Phase 86 결정 그대로 유지"
+  },
+  "a2_b1_status": "A2-def / B1-def는 자동 측정 불가 — 검색 만족도는 실 사용자 신호 필요. 본 phase에서 보류 유지 결정"
+}

@@ -1,0 +1,115 @@
+{
+  "id": "llm_smoke_10_20260518",
+  "date": "2026-05-18",
+  "phase": "88_partial_followup",
+  "purpose": "실 claude_cli LLM 환경에서 Phase 86~88 인프라 동작 + 보조 메트릭 일괄 검증",
+  "corpus": {
+    "source": "D:/file-test/samples (10건 선정)",
+    "files": [
+      "01_java_time.md", "02_java_cds.md", "03_flyway.md (PII 격리)",
+      "04_influxdb.md (PII 격리)", "05_postgresql.md", "06_tomcat.md",
+      "07_nginx.md", "08_log4j.txt", "09_mat.txt", "10_ajax.txt"
+    ],
+    "size_range_kb": "1~30",
+    "languages": "한국어 + 영어 혼합"
+  },
+  "environment": {
+    "binary": "src/target/release/pipeline.exe (Phase 88 부분 빌드)",
+    "llm": "claude_cli (primary)",
+    "embedder": "Claude CLI 폴백 (fastembed feature 비활성)",
+    "PIPELINE_BASE": "/tmp/file-pipeline-llm-smoke (Windows AppData/Local/Temp)"
+  },
+  "results": {
+    "processing": {
+      "total_inbox": 10,
+      "processed_ok": 8,
+      "sensitive_quarantined": 2,
+      "failed": 0,
+      "total_time_secs": 392.8,
+      "per_doc_avg_secs": 49.1,
+      "throughput_docs_per_min": 1.22,
+      "note": "Claude CLI 호출 평균 ~49초/건 (fastembed 폴백 모드, BGE-M3 활성 시 임베딩 가속 가능)"
+    },
+    "doc_type_diversity": {
+      "unique_types": 13,
+      "types": ["technical_guide", "technical_note", "decision", "troubleshooting",
+                "tutorial", "experiment_report", "installation_guide", "worklog",
+                "installation_manual", "sensitive", "configuration", "code_snippet",
+                "technical-reference"],
+      "note": "Java/DB 코퍼스 다양성 풍부 (Phase 86 측정의 -0.6% Metadata blocking 무효과 원인이 본 코퍼스에선 다를 가능성)"
+    },
+    "verification": {
+      "verified_pass": 8,
+      "verified_fail": 0,
+      "verify_pass_rate": "100%",
+      "note": "디폴트 임계값(structure_min=0.5 등)에서 100% 통과. 1-Pass 통과"
+    },
+    "sensitive_pii_c2_fp": {
+      "quarantined_total": 2,
+      "quarantined_rate": "20% (2/10)",
+      "details": {
+        "03_flyway.md": "email×4 + phone_kr×2 (DB 마이그레이션 도구 문서, 예제 코드일 가능성 — FP 가능)",
+        "04_influxdb.md": "phone_kr×1 + biz_reg_kr×1 (DB 플러그인 분석, 사업자번호 패턴 우연 매칭 — FP 가능)"
+      },
+      "conclusion": "10건 표본 작아 단정 어렵지만 FP 비율 추정 50~100% (2건 모두 FP일 가능성). 더 큰 표본 필요 (트리거 C2-fp 완전 결정 보류)"
+    },
+    "a1_llm_cache": {
+      "entries": 8,
+      "total_hits": 0,
+      "note": "첫 가공이라 hit 없음. 같은 파일 재가공 시 hit 측정 가능 (트리거 A1-hit 미결정)"
+    },
+    "search_mode_counters": "0 (검색 미수행 — 측정 범위 외)",
+    "crag_counters": "0 (검색 미수행 — 측정 범위 외)",
+    "decision_log_c1": "0 (자동 추천 트리거 미도달, 4h 주기)",
+    "lint_strong_claims_phase88": {
+      "total_hits": 8,
+      "per_doc_max_5": "적용 (긴 문서 폭발 없음)",
+      "detected_markers": {
+        "반드시": 3, "모든": 2, "무조건": 1, "전부": 1, "정확": 1
+      },
+      "tp_fp_estimation": {
+        "true_positive_likely": [
+          "nginx는 반드시 소스코드 버전으로 설치 (yum install 등 패키지 설치 불가)",
+          "원본 DB 변경 시 무조건 insert",
+          "디펜던시 순서가 적용 순서이므로 반드시 최상단에 기입"
+        ],
+        "false_positive_likely": [
+          "1970-01-01 00:00 UTC(epoch) 기준점 고정으로 정확 (정의/사실 진술)",
+          "모든 child 검색 (DB 기능 명세)",
+          "C/R/U/D 모든 쿼리를 master만 (CRUD 정책)"
+        ],
+        "tp_fp_ratio": "약 50/50 추정",
+        "conclusion": "wikidocs 353407 권고대로 점수화 아닌 후보 목록 반환 설계가 적절. 자동 reject 아닌 사용자 검토 흐름"
+      }
+    }
+  },
+  "side_findings": [
+    "✅ LocalVectorStore가 PIPELINE_BASE 환경변수 미통합 → Phase 88 부분에서 코드 수정 (resolve_data_base() 추가). lesson 29 / Phase 85 B-4 보강 완료",
+    "✅ claude_cli가 한국어 자연어 요약 + 다중 doc_type 정확 분류 (예: 'technical_note + decision', 'technical_guide + experiment_report')",
+    "✅ C2 PII 검출 동작 확인 (phone_kr/email/biz_reg_kr 모두 매칭됨)",
+    "⚠️ doc_types.toml 경고: stats 호출 시 release 디렉토리에서 doc_types.toml 찾음 (PIPELINE_BASE 통합 안 된 영역) — 별도 lesson 후보",
+    "⚠️ default_model='fastembed'이지만 feature 비활성 경고. fastembed 빌드 시 임베딩 234x 가속 (lesson 31 기록)",
+    "❌ relations 0건 — 10건 표본은 similarity_threshold 0.8 통과 어려움 (예상)"
+  ],
+  "infrastructure_verified": {
+    "phase_86_table_chunking": "측정 외 (단위 테스트로 검증)",
+    "phase_86_hyde": "측정 외 (LLM 어댑터 generate_hypothetical 미오버라이드)",
+    "phase_87_metadata_extension": "필드 존재 확인 (LLM이 채우진 않음 — N-2 후속 필요)",
+    "phase_87_detect_strong_claims": "✅ 가공본에 직접 적용 → 8건 검출, TP/FP 50/50 추정",
+    "phase_87_lint_multi_period": "필드 존재 (schedule task 분기 미연결 — N-3 후속)",
+    "phase_88_lint_strong_claims_method": "✅ Python 사본으로 알고리즘 검증. 실 Linter::lint_strong_claims 호출은 schedule 연결 후"
+  },
+  "next_actions": {
+    "n_2_prompts_classify": "LLM 가공 시 needs_verification/open_questions 채우려면 prompts.toml `classify` 갱신 필요",
+    "n_3_schedule_task": "lint_weekly_hours 도달 시 lint_strong_claims 자동 호출 연결",
+    "fastembed_build": "release 빌드 시 --features fastembed → 임베딩 가속 + per-doc 시간 단축 측정 가능",
+    "c2_fp_full_measurement": "100건 이상 다양 도메인 코퍼스로 PII FP 비율 정확 측정",
+    "relations_test": "1K+ 코퍼스에서 cross-reference 동작 검증"
+  },
+  "regression": {
+    "lib_tests": "343 (Phase 88 부분)",
+    "clippy_all_tests": "0 warnings",
+    "tauri_check": "pass",
+    "build_time_release_cli": "3m 42s (LocalVectorStore PIPELINE_BASE 수정 후)"
+  }
+}

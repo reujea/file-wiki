@@ -1,0 +1,71 @@
+# cargo-nextest 설정
+# 실행: cargo nextest run --all
+# 느린 테스트만: cargo nextest run --all -E 'test(/bench/)'
+
+[store]
+dir = "target/nextest"
+
+[profile.default]
+# 느린 테스트 경고: 60초 이상 걸리면 SLOW 표시
+slow-timeout = { period = "60s" }
+# 테스트 실패 시 즉시 출력
+failure-output = "immediate"
+success-output = "never"
+# 상태 업데이트 간격
+status-level = "slow"
+
+[profile.default.junit]
+path = "test-results.xml"
+
+# ── 벤치마크 타임아웃 정책 ──────────────────────────────────
+# 기준: 측정값 × 3~5배 (환경 변동 허용)
+
+# stub 벤치마크 (30문서, 측정값 ~10초)
+[[profile.default.overrides]]
+filter = "test(benchmark_full_compile_30_docs)"
+slow-timeout = { period = "30s", terminate-after = 4 }
+
+[[profile.default.overrides]]
+filter = "test(benchmark_incremental_skip)"
+slow-timeout = { period = "15s", terminate-after = 4 }
+
+[[profile.default.overrides]]
+filter = "test(benchmark_cross_references)"
+slow-timeout = { period = "15s", terminate-after = 4 }
+
+# bench_scale (100~5000문서, 측정값 0.75~74초)
+[[profile.default.overrides]]
+filter = "test(bench_scale_100)"
+slow-timeout = { period = "10s", terminate-after = 6 }
+
+[[profile.default.overrides]]
+filter = "test(bench_scale_500)"
+slow-timeout = { period = "30s", terminate-after = 4 }
+
+[[profile.default.overrides]]
+filter = "test(bench_scale_1000)"
+slow-timeout = { period = "60s", terminate-after = 4 }
+
+[[profile.default.overrides]]
+filter = "test(bench_scale_5000)"
+slow-timeout = { period = "120s", terminate-after = 10 }
+
+[[profile.default.overrides]]
+filter = "test(bench_search_curve)"
+slow-timeout = { period = "60s", terminate-after = 4 }
+
+# 실환경 벤치 (Claude CLI 호출, 측정값 ~63초)
+[[profile.default.overrides]]
+filter = "test(bench_real_claude_5docs)"
+slow-timeout = { period = "120s", terminate-after = 3 }
+
+# Qdrant 벤치 (외부 서비스)
+[[profile.default.overrides]]
+filter = "test(bench_qdrant_hnsw)"
+slow-timeout = { period = "60s", terminate-after = 3 }
+
+# ── CI 프로필 ─────────────────────────────────────────────────
+
+[profile.ci]
+slow-timeout = { period = "120s" }
+failure-output = "immediate-final"

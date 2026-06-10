@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+      "idea-bank": {
+        "command": "node",
+        "args": ["C:/dev/claude_workspaces/ideabank/idea-bank-mcp/dist/index.js"],
+        "env": {
+          "IDEA_BANK_ROOT": "C:/dev/claude_workspaces/ideabank/idea-bank"
+        }
+      },
+    "browser-automation": {
+      "type": "sse",
+      "url": "http://127.0.0.1:8731/sse",
+      "headers": {
+        "Authorization": "Bearer vrh8vJxdv291BOBBHJGlOiXdFMw-fNC2LnaL-r18a4s"
+      }
+    }
+  }
+}

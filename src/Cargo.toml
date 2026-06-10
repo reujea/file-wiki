@@ -1,0 +1,46 @@
+[workspace]
+members = [
+    "crates/core",
+    "crates/adapters",
+    "crates/shared",
+    "modals/cli",
+]
+exclude = ["modals/app"]
+resolver = "2"
+
+[workspace.dependencies]
+tokio              = { version = "1", features = ["full"] }
+anyhow             = "1"
+serde              = { version = "1", features = ["derive"] }
+serde_json         = "1"
+tracing            = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender   = "0.2"
+regex              = "1"
+sha2               = "0.10"
+hex                = "0.4"
+similar            = { version = "2", features = ["text"] }
+zstd               = "0.13"
+notify             = "6"
+chrono             = { version = "0.4", features = ["serde"] }
+clap               = { version = "=4.4.18", features = ["derive"] }
+dirs               = "=5.0.1"
+toml               = { version = "=0.7.8", features = ["display", "parse"] }
+async-trait        = "0.1"
+reqwest            = { version = "0.12", features = ["json"] }
+# qdrant-client 제거 — LocalVectorStore로 통합 (인프로세스)
+rmcp               = { version = "0.16", features = ["server", "transport-io"] }
+ndarray            = "0.16"
+ort                = { version = "2.0.0-rc.12", features = ["load-dynamic"] }
+tokenizers         = { version = "0.21", default-features = false, features = ["onig"] }  # 0.22 최신이나 ort 2.0-rc와 호환성 확인 필요
+axum               = "0.8"
+tower-http         = { version = "0.6", features = ["cors"] }
+calamine           = "0.26"  # 0.34 최신이나 API 호환성 확인 필요 — open_workbook_auto 시그니처 변경
+keyring            = "3"
+zip                = { version = "2", default-features = false, features = ["deflate"] }
+instant-distance   = "0.6"
+memmap2            = "0.9"
+bytemuck           = { version = "1", features = ["derive"] }
+rayon              = "1"
+moka               = { version = "0.12", features = ["sync"] }
+rusqlite           = { version = "0.31", features = ["bundled"] }

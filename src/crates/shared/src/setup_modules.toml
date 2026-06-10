@@ -1,0 +1,278 @@
+# Phase 80-E: 동작 모듈 정의
+#
+# 사용자가 "어떤 동작을 우선하나"를 직접 선택하는 의미 모듈.
+# 5축 룰 추론(Phase 76)을 폐기하고 모듈 합집합으로 대체.
+#
+# 형식:
+#   [[module]]
+#   id = "..."          # 고유 ID
+#   group = "process" | "search" | "ops"
+#   icon = "..."
+#   label = "..."       # UI 표시명
+#   hint = "..."        # 한 줄 설명
+#   priority = "P0" | "P1" | "P2"
+#   exclusive_group = "..."  # 같은 그룹은 택 1 (배타)
+#
+#   [[module.changes]]
+#   path = "section.field"
+#   value = <json>
+#   reason = "..."
+#   risk = "low" | "medium" | "high" | "critical"
+
+# ─────────────────────────────────────────────────────────────────
+# 가공 측면 (5)
+# ─────────────────────────────────────────────────────────────────
+
+[[module]]
+id = "secure_strict"
+group = "process"
+icon = "🔒"
+label = "민감 정보 강화"
+hint = "비밀번호·키 파일 격리 + 암호화 + warn 로그"
+priority = "P0"
+[[module.changes]]
+path = "sensitive.extensions"
+value = [".env", ".pem", ".key", ".p12", ".pfx", ".keystore", ".crt", ".cer", ".pgp", ".gpg"]
+reason = "자격증명/인증서/암호 파일 자동 격리"
+risk = "low"
+[[module.changes]]
+path = "sensitive.keywords"
+value = ["password", "secret", "private_key", "api_key", "token", "credential", "비밀번호", "주민등록번호", "계좌번호"]
+reason = "민감 키워드 기반 격리 강화"
+risk = "low"
+[[module.changes]]
+path = "compression.encrypt_sensitive"
+value = true
+reason = "민감 디렉토리 암호화"
+risk = "low"
+[[module.changes]]
+path = "logging.level"
+value = "warn"
+reason = "콘텐츠 단편의 로그 노출 줄임"
+risk = "low"
+
+[[module]]
+id = "preprocess_rich"
+group = "process"
+icon = "📄"
+label = "PDF·OCR 처리"
+hint = "PDF 변환 + OCR 활성화 (도구 설치 필요)"
+priority = "P0"
+[[module.changes]]
+path = "preprocessing.pdf_tool"
+value = "marker"
+reason = "수식·표·인용 보존 (pip install marker-pdf 필요)"
+risk = "medium"
+[[module.changes]]
+path = "preprocessing.ocr_tool"
+value = "tesseract"
+reason = "이미지 문서 OCR (apt install tesseract-ocr 또는 Windows 패키지 필요)"
+risk = "medium"
+
+[[module]]
+id = "chunk_large"
+group = "process"
+icon = "✂"
+label = "큰 청크 (회의·서술형)"
+hint = "회의록·논문 등 단락이 긴 문서에 적합"
+priority = "P0"
+exclusive_group = "chunking_size"
+[[module.changes]]
+path = "chunking.target_bytes"
+value = 2000
+reason = "발화·단락 단위 보존을 위해 청크 확대"
+risk = "low"
+[[module.changes]]
+path = "chunking.overlap_sentences"
+value = 3
+reason = "인접 단락 참조가 잦은 문서에 유리"
+risk = "low"
+[[module.changes]]
+path = "chunking.preserve_code_blocks"
+value = true
+reason = "혹시 섞여 있을 코드/수식 보호"
+risk = "low"
+
+[[module]]
+id = "chunk_small"
+group = "process"
+icon = "✂"
+label = "작은 청크 (코드·기술)"
+hint = "함수·클래스 단위 검색이 중요한 코드"
+priority = "P0"
+exclusive_group = "chunking_size"
+[[module.changes]]
+path = "chunking.target_bytes"
+value = 2500
+reason = "함수/클래스 단위 보존을 위해 큰 청크"
+risk = "low"
+[[module.changes]]
+path = "chunking.overlap_sentences"
+value = 1
+reason = "단위가 명확해 오버랩 최소화"
+risk = "low"
+[[module.changes]]
+path = "chunking.preserve_code_blocks"
+value = true
+reason = "코드펜스 분할 금지"
+risk = "low"
+
+[[module]]
+id = "verify_strict"
+group = "process"
+icon = "✅"
+label = "엄격 검증"
+hint = "ROUGE-L·구조 임계 상향 + 재시도 증가 (논문·법무에 적합)"
+priority = "P0"
+[[module.changes]]
+path = "verification.thresholds"
+value = { structure_min = 0.5, compression_min = 0.05, compression_max = 1.5, keyword_coverage_min = 0.5, keyword_completeness_min = 0.3, rouge_l_min = 0.5, entity_preservation_min = 0.5 }
+reason = "정밀 가공 — ROUGE-L 0.5 기준"
+risk = "medium"
+[[module.changes]]
+path = "verification.max_retry"
+value = 2
+reason = "검증 실패 시 재가공 더 시도"
+risk = "low"
+
+# ─────────────────────────────────────────────────────────────────
+# 검색 측면 (4)
+# ─────────────────────────────────────────────────────────────────
+
+[[module]]
+id = "search_precision"
+group = "search"
+icon = "🎯"
+label = "정밀 검색"
+hint = "Cross-Encoder 리랭킹 + 관련도 우선"
+priority = "P0"
+exclusive_group = "search_intent"
+[[module.changes]]
+path = "rerank.enabled"
+value = true
+reason = "Cross-Encoder 재정렬로 정밀도 향상"
+risk = "low"
+[[module.changes]]
+path = "rerank.top_n"
+value = 30
+reason = "후보군 넓게 두고 리랭킹으로 선별"
+risk = "low"
+[[module.changes]]
+path = "search.mmr_lambda"
+value = 0.7
+reason = "관련도 가중치 증가"
+risk = "low"
+
+[[module]]
+id = "search_exploration"
+group = "search"
+icon = "🎲"
+label = "탐색 검색"
+hint = "다양성 우선 + 컨텍스트 표시 확장"
+priority = "P0"
+exclusive_group = "search_intent"
+[[module.changes]]
+path = "search.mmr_lambda"
+value = 0.3
+reason = "다양성 가중치 증가 — 비슷한 결과 줄임"
+risk = "low"
+[[module.changes]]
+path = "search.window_lines"
+value = 8
+reason = "매칭 위치 ±8줄로 컨텍스트 확장"
+risk = "low"
+
+[[module]]
+id = "search_recent"
+group = "search"
+icon = "⏱"
+label = "최근 우선"
+hint = "최신 자료가 위로"
+priority = "P0"
+exclusive_group = "search_intent"
+[[module.changes]]
+path = "search.time_weight"
+value = 0.30
+reason = "recent 모드 boost 강화"
+risk = "low"
+
+[[module]]
+id = "rich_relations"
+group = "search"
+icon = "🔗"
+label = "풍부한 관계 그래프"
+hint = "문서 간 연결을 더 많이 보존"
+priority = "P0"
+[[module.changes]]
+path = "crossref.cap_related"
+value = 30
+reason = "RelatedTopic cap 상향"
+risk = "low"
+[[module.changes]]
+path = "crossref.similarity_threshold"
+value = 0.75
+reason = "관계 임계 완화 (관계 누락 줄임)"
+risk = "low"
+[[module.changes]]
+path = "crossref.supersedes_threshold"
+value = 0.93
+reason = "Supersedes 판정 임계 완화"
+risk = "low"
+
+# ─────────────────────────────────────────────────────────────────
+# 운영 측면 (3)
+# ─────────────────────────────────────────────────────────────────
+
+[[module]]
+id = "high_throughput"
+group = "ops"
+icon = "🚀"
+label = "고성능 (대용량)"
+hint = "병렬 처리·MinHash·prefetch 축소"
+priority = "P0"
+[[module.changes]]
+path = "max_workers"
+value = 8
+reason = "병렬도 상향 (메모리 사용량 증가)"
+risk = "medium"
+[[module.changes]]
+path = "crossref.minhash_force_enable"
+value = true
+reason = "MinHash LSH 강제 — 교차참조 O(N) 회피"
+risk = "low"
+[[module.changes]]
+path = "vector_db.rrf_multiplier"
+value = 2
+reason = "prefetch 배수 축소로 메모리 절감"
+risk = "low"
+[[module.changes]]
+path = "notification_batch.summary_interval_secs"
+value = 60
+reason = "알림 배치 주기 늘려 노이즈 완화"
+risk = "low"
+
+[[module]]
+id = "long_retention"
+group = "ops"
+icon = "💾"
+label = "장기 보존"
+hint = "원본 자동 삭제 안 함 (연구·법무)"
+priority = "P0"
+[[module.changes]]
+path = "compression.original_ttl_days"
+value = 0
+reason = "0=무제한 보존"
+risk = "low"
+
+[[module]]
+id = "auto_lint"
+group = "ops"
+icon = "🩺"
+label = "자동 정합성 검사"
+hint = "정기 lint로 코퍼스 건강도 점검"
+priority = "P1"
+[[module.changes]]
+path = "schedule.lint_interval_hours"
+value = 6
+reason = "6시간 주기 정합성 검사"
+risk = "low"

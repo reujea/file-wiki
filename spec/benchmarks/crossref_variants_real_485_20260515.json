@@ -1,0 +1,83 @@
+{
+  "id": "crossref_variants_real_485_20260515",
+  "date": "2026-05-15",
+  "phase": "86",
+  "corpus": {
+    "source": "D:/file-test/samples",
+    "total_files": 1211,
+    "processed_files": 485,
+    "skipped_files": 726,
+    "skipped_reason": "비텍스트 (png/jpg/wmv/asf/zip 등) + 짧은 파일(fragment threshold)"
+  },
+  "method": {
+    "test": "bench_real_corpus_variants",
+    "embedder": "HashEmbedder(128dim)",
+    "llm": "RealCorpusLlm (키워드 추출 stub)",
+    "runs": 3,
+    "metric": "중앙값 (lesson 04)"
+  },
+  "results": {
+    "baseline_07": {
+      "time_runs_secs": [37.33, 25.92, 25.84],
+      "time_median_secs": 25.92,
+      "relations": 11166,
+      "note": "1회차에 첫 측정 캐시 효과 (37s) → 2~3회 안정"
+    },
+    "threshold_08": {
+      "time_runs_secs": [28.42, 27.89, 26.07],
+      "time_median_secs": 27.89,
+      "time_delta_pct": 7.6,
+      "relations": 2848,
+      "relations_delta_pct": -74.5,
+      "decision": "✅ Phase 85에 이미 디폴트 적용"
+    },
+    "minhash_force": {
+      "time_runs_secs": [26.34, 27.08, 26.22],
+      "time_median_secs": 26.34,
+      "time_delta_pct": 1.6,
+      "relations": 8940,
+      "relations_delta_pct": -19.9,
+      "decision": "❌ 디폴트 변경 보류 — 시간 변화 미미 + 관계 변화 작음 (threshold 0.8의 부분 효과)"
+    },
+    "metadata_blocking": {
+      "time_runs_secs": [26.64, 27.36, 35.33],
+      "time_median_secs": 27.36,
+      "time_delta_pct": 5.6,
+      "relations": 11094,
+      "relations_delta_pct": -0.6,
+      "decision": "❌ 디폴트 변경 보류 — 관계 변화 -0.6% (의미 없음). 본 코퍼스(Java/Spring) 메타데이터 다양성 부족"
+    },
+    "all_08_mh_block": {
+      "time_runs_secs": [28.75, 30.82, 33.77],
+      "time_median_secs": 30.82,
+      "time_delta_pct": 18.9,
+      "relations": 2242,
+      "relations_delta_pct": -79.9,
+      "decision": "과적용 — threshold 0.8 + MinHash 중첩 효과로 관계 79.9% 감소 + 시간 +18.9%"
+    }
+  },
+  "interpretation": {
+    "trigger_2_minhash": {
+      "previous_325_files": "시간 +9.3% / 관계 -21.0% — 보류",
+      "current_485_files": "시간 +1.6% / 관계 -19.9% — 시간 효과 차이 큼",
+      "conclusion": "코퍼스 특성(Java/Spring 문서)에 따라 시간 영향 변동. 관계 감소(-19.9%)는 threshold 0.8의 -74.5%에 비해 작음. 디폴트 변경 보류 재확인. 인프라(force/min_docs)는 정상"
+    },
+    "trigger_4_metadata_blocking": {
+      "previous_325_files": "관계 0% — 보류",
+      "current_485_files": "관계 -0.6% — 본질적으로 동일",
+      "conclusion": "Java/Spring 문서는 doc_type 다양성이 부족(other가 압도적)이라 메타블로킹 효과 거의 없음. 5K+ 다양한 도메인 코퍼스에서 재측정 권장"
+    },
+    "trigger_1_threshold_08": "이미 디폴트 적용 (Phase 85). 본 측정에서도 가장 강력한 효과 확인"
+  },
+  "next_actions": {
+    "trigger_2_default_change": "BLOCKED — 본 코퍼스로 디폴트 변경 불가. 더 다양한 도메인 + 더 큰 규모(5K+) 측정 필요",
+    "trigger_4_default_change": "BLOCKED — 본 코퍼스로 디폴트 변경 불가. doc_type 다양성 확보된 코퍼스 필요",
+    "hyde_6_measurement": "본 측정 범위 외 — 디폴트 no-op (어댑터 오버라이드 후 가능)",
+    "table_chunking_8": "단위 테스트로 충분히 검증. 실 코퍼스 측정은 표 비중 높은 코퍼스 진입 시"
+  },
+  "regression": {
+    "lib_tests": "336 (96+145+95)",
+    "clippy_all_tests": "0 warnings",
+    "tauri_check": "pass"
+  }
+}

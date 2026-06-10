@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>file-pipeline Dashboard</title>
+<link rel="stylesheet" href="/static/dashboard.css">
+</head>
+<body>
+<h1>file-pipeline Dashboard</h1>
+
+<!-- Stats Cards -->
+<div class="grid">
+  <div class="card"><h3>Total Documents</h3><div class="value" id="stat-total">-</div></div>
+  <div class="card"><h3>KG Nodes</h3><div class="value" id="stat-kg-nodes">-</div></div>
+  <div class="card"><h3>KG Edges</h3><div class="value" id="stat-kg-edges">-</div></div>
+  <div class="card"><h3>Isolated</h3><div class="value" id="stat-isolated">-</div></div>
+  <div class="card"><h3>Queue</h3><div class="value" id="stat-queue">-</div></div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-action="switch-tab" data-tab="documents">Documents</div>
+  <div class="tab" data-action="switch-tab" data-tab="verification">Verification</div>
+  <div class="tab" data-action="switch-tab" data-tab="topics">Topics</div>
+  <div class="tab" data-action="switch-tab" data-tab="settings">Settings</div>
+</div>
+
+<!-- Tab: Documents (그래프 + 테이블 + 검색) -->
+<div class="tab-content active" id="tab-documents">
+  <!-- 검색/필터 -->
+  <div class="filter-bar">
+    <input type="text" id="search-query" placeholder="검색어 입력..." style="flex:2">
+    <select id="doc-type-filter">
+      <option value="">전체 유형</option>
+    </select>
+    <input type="date" id="date-from" placeholder="시작일">
+    <input type="date" id="date-to" placeholder="종료일">
+    <button class="btn btn-primary" data-action="search">검색</button>
+  </div>
+
+  <!-- 벡터 그래프 -->
+  <h2 class="section-title">Knowledge Graph</h2>
+  <div class="kg-container">
+    <svg id="kg-svg" width="100%" height="300"></svg>
+  </div>
+
+  <!-- 문서 테이블 -->
+  <h2 class="section-title">문서 목록</h2>
+  <div class="panel">
+    <table class="doc-table" id="doc-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>유형</th>
+          <th>날짜</th>
+          <th>토픽</th>
+          <th>계층</th>
+          <th>접근수</th>
+        </tr>
+      </thead>
+      <tbody id="doc-table-body"></tbody>
+    </table>
+    <div id="doc-pagination"></div>
+  </div>
+
+  <!-- Document Detail -->
+  <div class="detail-panel" id="doc-detail">
+    <button class="close-btn" data-action="close-detail">닫기</button>
+    <h3 id="detail-title"></h3>
+    <pre id="detail-content"></pre>
+    <div id="detail-relations"></div>
+  </div>
+</div>
+
+<!-- Tab: Verification -->
+<div class="tab-content" id="tab-verification">
+  <div id="verification-results"></div>
+</div>
+
+<!-- Tab: Topics -->
+<div class="tab-content" id="tab-topics">
+  <div class="topics-list" id="topics-list"></div>
+  <div class="topic-editor" id="topic-editor" style="display:none">
+    <div class="topic-editor-header">
+      <h3 id="topic-editor-title"></h3>
+      <div class="settings-actions">
+        <button class="btn btn-primary" data-action="save-topic">저장</button>
+        <button class="btn btn-secondary" data-action="close-topic">닫기</button>
+      </div>
+    </div>
+    <textarea id="topic-content" rows="20"></textarea>
+    <div id="topic-status"></div>
+  </div>
+</div>
+
+<!-- Tab: Settings -->
+<div class="tab-content" id="tab-settings">
+  <div class="settings-header">
+    <h2 class="section-title">Pipeline Settings</h2>
+    <div class="settings-actions">
+      <button class="btn btn-primary" data-action="save-settings">저장</button>
+      <button class="btn btn-secondary" data-action="reset-settings">초기화</button>
+    </div>
+  </div>
+  <div id="settings-status"></div>
+  <div id="settings-form"></div>
+</div>
+
+<script src="/static/dashboard.js"></script>
+</body>
+</html>

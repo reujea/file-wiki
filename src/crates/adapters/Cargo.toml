@@ -1,0 +1,48 @@
+[package]
+name = "file-pipeline-adapters"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+file-pipeline-core = { path = "../core" }
+module-storage     = { path = "../../../../_rust_module/module-storage" }
+module-storage-api = { path = "../../../../_rust_module/module-storage-api" }
+module-notify      = { path = "../../../../_rust_module/module-notify" }
+module-notify-api  = { path = "../../../../_rust_module/module-notify-api" }
+module-llm-prompts = { path = "../../../../_rust_module/module-llm-prompts" }
+module-llm         = { path = "../../../../_rust_module/module-llm" }
+module-llm-api     = { path = "../../../../_rust_module/module-llm-api" }
+module-llm-chunked = { path = "../../../../_rust_module/module-llm-chunked" }
+anyhow             = { workspace = true }
+serde              = { workspace = true }
+serde_json         = { workspace = true }
+tokio              = { workspace = true }
+tracing            = { workspace = true }
+async-trait        = { workspace = true }
+notify             = { workspace = true }
+chrono             = { workspace = true }
+reqwest            = { workspace = true }
+similar            = { workspace = true }
+regex              = { workspace = true }
+# qdrant-client 제거
+# Phase 64 트리거 #11: ort/tokenizers (Rust 네이티브 ONNX) 폐기. fastembed가 동일 기능 + 정적 링크 + 안정성 모두 우월.
+fastembed  = { version = "5", optional = true }
+zstd       = { workspace = true, optional = true }
+ndarray            = { workspace = true }
+instant-distance   = { workspace = true }
+memmap2            = { workspace = true }
+bytemuck           = { workspace = true }
+rayon              = { workspace = true }
+moka               = { workspace = true }
+calamine           = { workspace = true }
+zip                = { workspace = true }
+tempfile           = "3"
+chardetng          = "0.1"
+encoding_rs        = "0.8"
+
+[features]
+fastembed = ["dep:fastembed", "dep:zstd"]
+
+[dev-dependencies]
+tempfile = "3"
+filetime = "0.2"

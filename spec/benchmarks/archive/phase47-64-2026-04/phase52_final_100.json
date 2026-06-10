@@ -1,0 +1,40 @@
+{
+  "version": 1,
+  "timestamp": "2026-04-23T18:54:00",
+  "label": "phase52_final_100",
+  "git_hash": null,
+  "doc_count": 100,
+  "throughput": {
+    "total_secs": 4.24,
+    "process_secs": 4.24,
+    "batch_end_secs": 0.0,
+    "flush_secs": 0.0,
+    "docs_per_sec": 23.6
+  },
+  "per_doc": {
+    "avg_ms": 42.0,
+    "p50_ms": 40.0,
+    "p95_ms": 54.0,
+    "max_ms": 70.0,
+    "variance_ratio": 1.35
+  },
+  "search": {
+    "avg_ms": 0.062,
+    "p95_ms": 0.087,
+    "queries": 100
+  },
+  "crossref": {
+    "relation_count": 5650,
+    "unique_pairs": 2007,
+    "double_count_ratio": 2.82,
+    "isolated_docs": 0
+  },
+  "storage": {
+    "input_bytes": 83968,
+    "processed_bytes": 112640,
+    "originals_bytes": 58368,
+    "compression_pct": -104.0
+  },
+  "corpus": null,
+  "note": "Phase 52 final baseline. Release build. HashEmbedder 128dim."
+}

@@ -1,0 +1,45 @@
+{
+  "measurement": "A1 LLM 캐시 hit률 측정 (Phase 89)",
+  "date": "2026-05-18",
+  "corpus": "D:/file-test/samples → D:/file-test/bench_phase89/inbox (9건, txt+html+md, 100KB 이하)",
+  "environment": {
+    "pipeline_base": "D:/file-test/bench_phase89",
+    "binary": "src/target/release/pipeline.exe (build 2026-05-18 14:03)",
+    "llm_provider": "claude_cli",
+    "embedding": "fastembed BGE-M3 1024차원 (cold/warm 미분리)",
+    "llm_cache_enabled": true,
+    "llm_cache_max_entries": 10000
+  },
+  "method": "1차 가공 → 모든 증분 상태 (.local-store.json + .work-queue.json + .compile-state.json) 삭제 → 같은 파일 재투입 → 2차 가공",
+  "results": {
+    "pass1_miss": {
+      "docs": 9,
+      "elapsed_total_s": 433.2,
+      "per_doc_s": 48.1,
+      "throughput_docs_per_s": 0.02,
+      "cache_state_after": "entries=9, total_hits=0, avg_hits=0.00"
+    },
+    "pass2_hit": {
+      "docs": 9,
+      "elapsed_total_s": 199.2,
+      "per_doc_s": 24.9,
+      "throughput_docs_per_s": 0.05,
+      "cache_state_after": "entries=9, total_hits=9, avg_hits=1.00",
+      "speedup_vs_pass1": "1.93x (per-doc)",
+      "llm_cache_hit_log_evidence": "[llm-cache] hit text file_name=... hash=..."
+    }
+  },
+  "interpretation": {
+    "llm_call_share": "약 50% — LLM 호출이 제거되면 per-doc이 절반으로. 나머지 50%는 임베딩(fastembed) + 검증 + 압축 + 색인",
+    "phase_88_alignment": "Phase 88 측정 per-doc 44.9s(fastembed warm)/49.1s(비활성) 대비 본 측정 48.1s는 fastembed warm 근사. 측정 환경 신뢰성 확인",
+    "important_finding": "SHA-256 중복 체크 + .compile-state.json + .work-queue.json이 LLM 호출 이전에 동일 파일을 스킵하므로, 단순 inbox 재투입으로는 A1 캐시까지 도달 못함. 증분 상태 파일을 비워야 LLM 호출 경로가 활성화되어 A1 hit 측정 가능"
+  },
+  "side_observations": {
+    "host_tools_cache_fallback": "호스트 전처리 도구 감지(fallback, 비캐시): openpyxl 3.1.5 — 매 호출마다 fallback 감지 발생. host_tools_cache 미동작 가능성 (lesson 후보)",
+    "doc_types_toml_missing": "doc_types.toml 없음 WARN — release 빌드 cwd에 파일 없음. 빈 레지스트리로 동작"
+  },
+  "next_steps": {
+    "production": "운영 시 hit 발생 시나리오: (1) 동일 파일 hash이지만 다른 inbox(예: extra_inbox), (2) settings.db 보존 + 색인 DB만 rebuild, (3) 동일 content_hash 청크 가공",
+    "follow_up": "Phase 89 lesson 43 본문에 SHA 중복 체크 + 증분 상태가 A1 캐시 도달을 차단하는 발견 추가"
+  }
+}

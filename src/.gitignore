@@ -1,0 +1,25 @@
+/target/
+/vendor/*.exe
+/vendor/*.zip
+*.zip
+
+# 런타임 상태 파일
+.sqlite-vec.json
+.work-queue.json
+.compile-state.json
+.feedback-history.json
+*.bak
+
+# 로그
+logs/
+
+# ONNX 모델 + Python 환경
+models/
+.onnx-env/
+
+# 가공 데이터
+processed/
+originals/
+sensitive/
+quarantine/
+inbox/

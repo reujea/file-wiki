@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "timestamp": "2026-04-24T15:25:57",
+  "label": "threshold_080",
+  "git_hash": "04bce0c",
+  "doc_count": 100,
+  "throughput": {
+    "total_secs": 17.240804,
+    "process_secs": 17.0214325,
+    "batch_end_secs": 0.0108442,
+    "flush_secs": 0.2085273,
+    "docs_per_sec": 5.800193540858071
+  },
+  "per_doc": {
+    "avg_ms": 170.21317,
+    "p50_ms": 167.84470000000002,
+    "p95_ms": 197.11870000000002,
+    "max_ms": 224.9061,
+    "variance_ratio": 1.1744112265683695
+  },
+  "search": {
+    "avg_ms": 0.5067969999999999,
+    "p95_ms": 1.1146,
+    "queries": 100
+  },
+  "crossref": {
+    "relation_count": 5650,
+    "unique_pairs": 2007,
+    "double_count_ratio": 2.815146985550573,
+    "isolated_docs": 0
+  },
+  "storage": {
+    "input_bytes": 84269,
+    "processed_bytes": 113341,
+    "originals_bytes": 58889,
+    "compression_pct": -104.38120779883468
+  },
+  "corpus": null
+}

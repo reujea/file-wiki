@@ -1,0 +1,42 @@
+[package]
+name = "file-pipeline-tauri"
+version = "0.1.0"
+edition = "2021"
+description = "File Pipeline — Tauri 2.0 데스크톱/모바일 앱"
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.7"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+anyhow = "1"
+dirs-next = "2"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+
+# 파이프라인 크레이트
+file-pipeline-core = { path = "../../crates/core" }
+file-pipeline-adapters = { path = "../../crates/adapters" }
+file-pipeline-shared = { path = "../../crates/shared" }
+
+[profile.release]
+strip = true
+lto = true
+codegen-units = 1
+opt-level = "s"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+fastembed = ["file-pipeline-shared/fastembed", "file-pipeline-adapters/fastembed"]
+# 모바일 빌드 시: cargo tauri android build / cargo tauri ios build
+# tray-icon은 데스크톱 전용이므로 모바일에서는 자동 비활성화 (cfg(not(target_os="android")) 등)
+mobile = []

@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "timestamp": "2026-05-14T16:30:00",
+  "label": "crossref_variants_real_325",
+  "git_hash": null,
+  "doc_count": 310,
+  "corpus": {
+    "source": "D:\\file-test\\samples",
+    "processable_files": 325,
+    "after_hash_dedup": 310
+  },
+  "variants": [
+    { "label": "baseline_0.7_mh-off_block-off", "secs": 9.23, "ok": 325, "relations": 10034 },
+    { "label": "threshold_0.8", "secs": 8.82, "ok": 325, "relations": 2636, "vs_baseline_time_pct": -4.5, "vs_baseline_rels_pct": -73.7 },
+    { "label": "minhash_force", "secs": 10.09, "ok": 325, "relations": 7922, "vs_baseline_time_pct": 9.3, "vs_baseline_rels_pct": -21.0 },
+    { "label": "metadata_blocking", "secs": 8.46, "ok": 325, "relations": 10034, "vs_baseline_time_pct": -8.3, "vs_baseline_rels_pct": 0.0 },
+    { "label": "all_0.8_mh_block", "secs": 9.91, "ok": 325, "relations": 2054, "vs_baseline_time_pct": 7.4, "vs_baseline_rels_pct": -79.5 }
+  ],
+  "decisions": {
+    "trigger_1_threshold_0.8": "이미 적용됨 (2026-04-30)",
+    "trigger_2_minhash_default": "보류 — 시간 +9.3% 증가, threshold 0.8이 동일 효과를 시간 -4.5%로 달성",
+    "trigger_4_metadata_blocking_default": "보류 — 관계 변화 0%. 합성 100문서 결과 실 코퍼스로 재확인"
+  },
+  "note": "bench_real_corpus_variants (modals/cli/tests/bench_real_corpus.rs). HashEmbedder 128dim. release 빌드. 단일 측정 — 5변형 직렬 실행. 5K+ 코퍼스 도달 시 재측정 필요."
+}

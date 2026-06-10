@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "timestamp": "2026-04-21T18:41:54",
+  "label": "micro_profile_50",
+  "git_hash": "04bce0c",
+  "doc_count": 50,
+  "throughput": {
+    "total_secs": 3.8756632,
+    "process_secs": 3.7896235000000003,
+    "batch_end_secs": 0.0086581,
+    "flush_secs": 0.0773816,
+    "docs_per_sec": 12.901017818060145
+  },
+  "per_doc": {
+    "avg_ms": 75.79165200000001,
+    "p50_ms": 69.15830000000001,
+    "p95_ms": 109.14500000000001,
+    "max_ms": 112.5481,
+    "variance_ratio": 1.578190904056346
+  },
+  "search": null,
+  "crossref": {
+    "relation_count": 0,
+    "unique_pairs": 0,
+    "double_count_ratio": 0.0,
+    "isolated_docs": 0
+  },
+  "storage": null,
+  "corpus": null
+}

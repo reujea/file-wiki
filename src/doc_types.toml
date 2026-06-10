@@ -1,0 +1,101 @@
+# ══════════════════════════════════════════════════════════
+# 문서 유형 검증 스키마 — doc_types.toml
+# ══════════════════════════════════════════════════════════
+# LLM이 문서 유형을 자율 판단한 뒤, 이 스키마의 섹션 기준으로 검증합니다.
+# 유형 판단 자체는 LLM에 위임되며, 여기에 없는 유형도 생성 가능합니다.
+# sections: 검증 시 구조 완전성(structure_min) 기준으로 사용
+# thresholds: 유형별 검증 임계값 오버라이드 (없으면 글로벌 기준 적용)
+
+[[types]]
+id       = "meeting"
+label_ko = "회의록"
+sections = ["결정사항", "액션아이템", "다음안건"]
+[types.thresholds]
+structure_min = 0.3
+compression_max = 2.0
+
+[[types]]
+id       = "legal"
+label_ko = "법률문서"
+sections = ["당사자", "핵심조항", "기한", "서명일"]
+
+[[types]]
+id       = "guide"
+label_ko = "가이드"
+sections = ["목적", "단계별절차", "주의사항"]
+
+[[types]]
+id       = "study"
+label_ko = "학습노트"
+sections = ["핵심개념", "요약", "모르는것", "복습포인트"]
+
+[[types]]
+id       = "paper"
+label_ko = "논문"
+sections = ["연구목적", "방법론", "핵심결과", "한계", "인용키"]
+
+[[types]]
+id       = "log"
+label_ko = "일지"
+sections = ["완료", "이슈", "내일계획"]
+
+[[types]]
+id       = "todo"
+label_ko = "할일"
+sections = ["긴급+중요", "중요+여유"]
+[types.thresholds]
+structure_min = 0.0
+compression_max = 3.0
+
+[[types]]
+id       = "email"
+label_ko = "이메일"
+sections = ["보낸사람", "받는사람", "본문요약", "첨부파일"]
+
+[[types]]
+id       = "report"
+label_ko = "보고서"
+sections = ["목적", "현황", "분석", "결론", "제안"]
+
+[[types]]
+id       = "proposal"
+label_ko = "제안서"
+sections = ["배경", "목표", "방법", "예산", "일정"]
+
+[[types]]
+id       = "resume"
+label_ko = "이력서"
+sections = ["인적사항", "학력", "경력", "기술"]
+
+[[types]]
+id       = "receipt"
+label_ko = "영수증"
+sections = ["발행처", "품목", "금액", "일자"]
+
+[[types]]
+id       = "memo"
+label_ko = "메모"
+sections = ["핵심내용"]
+[types.thresholds]
+structure_min = 0.0
+compression_max = 3.0
+
+[[types]]
+id       = "brainstorm"
+label_ko = "아이디어"
+sections = ["주제", "아이디어목록", "다음단계"]
+
+[[types]]
+id       = "retrospective"
+label_ko = "회고"
+sections = ["잘한것", "개선할것", "액션"]
+
+[[types]]
+id       = "specification"
+label_ko = "사양서"
+sections = ["목적", "요구사항", "제약조건", "검수기준"]
+
+[[types]]
+id       = "reference"
+label_ko = "참고자료"
+sections = ["출처", "핵심내용", "활용방안"]

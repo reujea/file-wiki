@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "timestamp": "2026-04-23T18:55:00",
+  "label": "phase52_final_2000",
+  "git_hash": null,
+  "doc_count": 2000,
+  "throughput": {
+    "total_secs": 97.7,
+    "process_secs": 94.7,
+    "batch_end_secs": 0.008,
+    "flush_secs": 3.0,
+    "docs_per_sec": 20.5
+  },
+  "per_doc": {
+    "avg_ms": 47.0,
+    "p50_ms": 43.0,
+    "p95_ms": 69.0,
+    "max_ms": 180.0,
+    "variance_ratio": 1.6
+  },
+  "search": {
+    "avg_ms": 0.212,
+    "p95_ms": 0.362,
+    "queries": 100
+  },
+  "crossref": {
+    "relation_count": 108240,
+    "unique_pairs": 54120,
+    "double_count_ratio": 2.0,
+    "isolated_docs": 0
+  },
+  "storage": null,
+  "corpus": null,
+  "flush_detail": {
+    "snap_secs": 0.0,
+    "search_secs": 0.6,
+    "link_secs": 2.2,
+    "persist_secs": 0.1,
+    "total_links": 140080
+  },
+  "note": "Phase 52 final baseline. Release build. HashEmbedder 128dim. 증분 flush + Atomic + RAG 고도화."
+}

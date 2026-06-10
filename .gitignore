@@ -1,0 +1,80 @@
+# Build artifacts
+target/
+**/target/
+dist/
+*.exe
+*.pdb
+*.dll
+*.so
+*.dylib
+*.rlib
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Embeddings / Models / Vendor
+.fastembed_cache/
+models/
+vendor/
+*.onnx
+*.gguf
+*.safetensors
+
+# Runtime data (PIPELINE_BASE outputs)
+inbox/
+processed/
+quarantine/
+sensitive/
+originals/
+qdrant/
+logs/
+doc/
+.tmp/
+
+# Settings DB + state
+settings.db
+settings.db-*
+.local-store.json
+.work-queue.json
+.last-release
+
+# Backup files
+*.bak
+*.swp
+*.orig
+
+# IDE
+.idea/
+.vscode/
+.zed/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tauri-specific build cache
+src/file-pipeline-tauri/target/
+src/file-pipeline-tauri/node_modules/
+
+# Bundle-cycle 증거 (git tree 밖이지만 보호)
+.bundle-cycle/
+.bundle-cycle-runs/
+
+# Playwright
+.playwright-mcp/
+
+# Local profile/credential files
+.env
+.env.local
+*.local.yaml
+*.local.yml
+
+# Handsoff (user raw input, transient)
+handsoff/
+
+# Custom user instructions (local-only per CLAUDE convention)
+CLAUDE.local.md
