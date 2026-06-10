@@ -21,7 +21,10 @@ thiserror   = "1"
 # Phase 201 — plugin protocol (host 측 PluginRegistry + permission gate)
 # plugin-architecture-2026-06-04.md §2-D / §5-C
 fp-plugin-protocol = { path = "../../../../_rust_module/fp-plugin-protocol" }
+# Phase 202 본진입 — cross-platform Connection (named pipe / Unix domain socket)
+# plugin-architecture-2026-06-04.md §2-B
+fp-plugin-sdk      = { path = "../../../../_rust_module/fp-plugin-sdk" }
 
 [dev-dependencies]
 tempfile = "3"
-tokio = { version = "1", features = ["rt", "macros"] }
+tokio = { version = "1", features = ["rt", "macros", "time", "net", "io-util", "sync"] }

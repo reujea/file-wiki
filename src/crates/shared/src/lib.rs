@@ -432,6 +432,21 @@ pub fn build_service(
     let audit: Arc<dyn file_pipeline_core::ports::output::AuditPort> =
         crate::settings_audit_adapter::SettingsAuditAdapter::shared(paths.base.join("settings.db"));
 
+    // Phase 202 B2: plugin IPC registry — discover + audit 주입
+    let mut plugin_registry =
+        file_pipeline_core::plugin::PluginRegistry::new().with_audit(Arc::clone(&audit));
+    match plugin_registry.discover(&paths.plugins) {
+        Ok(n) => {
+            if n > 0 {
+                info!("plugin: {} 건 discover", n);
+            }
+        }
+        Err(e) => {
+            warn!("plugin discover 실패 (계속 진행): {}", e);
+        }
+    }
+    let plugin_registry = Arc::new(plugin_registry);
+
     Ok(FileProcessingService {
         llm,
         storage,
@@ -490,6 +505,7 @@ pub fn build_service(
         metrics_recorder: Some(Arc::new(SettingsDbMetricsAdapter::new(
             paths.base.join("settings.db"),
         ))),
+        plugin_registry,
     })
 }
 

@@ -151,6 +151,11 @@ pub struct FileProcessingService {
 
     /// Phase 82-prep: 처리 메트릭 영속화 (None=비활성, summary는 메모리만)
     pub metrics_recorder: Option<Arc<dyn ProcessingMetricsPort>>,
+
+    /// Phase 202 B2: plugin IPC 호출 게이트.
+    /// `build_service`에서 `PluginRegistry::new().with_audit(audit).discover(paths.plugins)` 결과 주입.
+    /// 테스트 디폴트는 빈 PluginRegistry (lesson 14 + lesson 21/27 회피).
+    pub plugin_registry: Arc<crate::plugin::PluginRegistry>,
 }
 
 /// 교차참조 비동기 큐 항목
@@ -1526,6 +1531,7 @@ mod tests {
             crossref_last_run: std::sync::Mutex::new(None),
             crossref_interval_secs: 30,
             metrics_recorder: None,
+            plugin_registry: Arc::new(crate::plugin::PluginRegistry::new()),
         }
     }
 
