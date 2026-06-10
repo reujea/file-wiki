@@ -12,6 +12,7 @@
 #   - mcp        (search, kg_neighbors, kg_paths, get_document, list_documents)
 #   - tauri      (search)
 #   - remote     (remote.{backend}.upload.{processed|origin})
+#   - plugin     (Phase 202 B2: plugin.{plugin_id}.{method} — IPC 호출 prepend)
 #   - verify     (예약 — 향후 도메인 검증 단계 부착 시)
 #   - service    (예약 — 향후 도메인 서비스 단계 부착 시)
 #
@@ -21,6 +22,7 @@
 #   - 1건+이면 exit 1 + 신규 영역 추가 검토 권고
 #
 # 관련: lesson 54 §메타 룰 24 후보 / META.md 메타 룰 24 후보 / Phase 95 stage 정형화
+# Phase 202 B2 plan: cozy-honking-crayon.md §stage 명명
 
 set -euo pipefail
 
@@ -31,7 +33,7 @@ else echo "ERROR: crates/ 미존재 (탐색: $ROOT/src/crates, $ROOT/crates)" >&
 fi
 
 # 허용 prefix (정규식 OR)
-ALLOWED='^(llm|mcp|tauri|remote|verify|service)\.'
+ALLOWED='^(llm|mcp|tauri|remote|plugin|verify|service)\.'
 
 # audit.record(...) 호출의 두 번째 인자(stage 문자열) 추출
 STAGES=$(grep -rohnE 'audit\.record\([^,]+,\s*"[^"]+"' "$SRC_DIR/crates" "$SRC_DIR/modals" 2>/dev/null \
@@ -45,7 +47,15 @@ DYNAMIC_STAGES=$(grep -rohnE 'audit\.record\([^,]+,\s*&format!\("[^"]+"' "$SRC_D
   | sed -E 's/\.$//' \
   | sort -u || true)
 
-if [ -z "$STAGES$DYNAMIC_STAGES" ]; then
+# 변수 기반 stage — `let stage = format!("...");` 패턴
+# 예: let stage = format!("plugin.{}.{}", plugin_id, method);
+# audit.record(trace_id, &stage, ...) 호출이 변수 참조 시 본 패턴으로 prefix 추출
+VAR_STAGES=$(grep -rohnE 'let stage = format!\("[^"]+"' "$SRC_DIR/crates" "$SRC_DIR/modals" 2>/dev/null \
+  | sed -E 's/.*format!\("([^{]+)\{.*/\1/' \
+  | sed -E 's/\.$//' \
+  | sort -u || true)
+
+if [ -z "$STAGES$DYNAMIC_STAGES$VAR_STAGES" ]; then
   echo "WARN: audit.record 호출 0건 — 검사 대상 없음"
   exit 0
 fi
@@ -73,6 +83,18 @@ while IFS= read -r stage; do
     VIOLATIONS="$VIOLATIONS\n  - $stage.* (dynamic)"
   fi
 done <<< "$DYNAMIC_STAGES"
+
+echo ""
+echo "== 변수 기반 stage prefix 검사 (let stage = format!) =="
+while IFS= read -r stage; do
+  [ -z "$stage" ] && continue
+  if echo "$stage." | grep -qE "$ALLOWED"; then
+    echo "  ✓ $stage.* (var)"
+  else
+    echo "  ✗ VIOLATION (var): $stage.*"
+    VIOLATIONS="$VIOLATIONS\n  - $stage.* (var)"
+  fi
+done <<< "$VAR_STAGES"
 
 echo ""
 if [ -n "$VIOLATIONS" ]; then

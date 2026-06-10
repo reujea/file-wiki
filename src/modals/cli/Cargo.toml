@@ -33,3 +33,5 @@ async-trait = { workspace = true }
 chrono      = { workspace = true }
 reqwest     = { workspace = true }
 zip         = { workspace = true }
+# Phase 202 B2: plugin IPC 통합 테스트 (plugin_e2e.rs)
+fp-plugin-sdk = { path = "../../../../_rust_module/fp-plugin-sdk" }
