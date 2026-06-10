@@ -1,9 +1,59 @@
 ---
-updated: 2026-06-05 (본 세션 종결 — Phase 200/201/202 placeholder 진입 + lesson 73~75 + 메타 룰 17 강화/27 정식 + 자동화 9종 + 4축 합의 + spec 본문 즉시 갱신. 본질 재정의 2차 §유지)
+updated: 2026-06-10 (본 세션 종결 — Phase 202 본진입 실 IPC 완료 + bundle-cycle B1~B4 + lesson 76 + file-pipeline 단독 git 첫 설정. Phase 203 fp-plugin-search placeholder 진입. 본질 재정의 2차 §유지)
 status: active
 ---
 
 # file-pipeline 로드맵
+
+## 2026-06-10 본 세션 종결 (Phase 202 본진입 + Phase 203 placeholder, bundle-cycle B1~B4)
+
+### 사용자 트리거 시계열
+
+| # | 트리거 | 결과 |
+|---|------|------|
+| 1 | "spec 폴더 분석하고 다음 구현항목 진행해" | INDEX/META 읽기 + lesson 75 후속 트리거 4건 정리 + 다음 항목 보고 |
+| 2 | "다음 고도화 항목 알려줘" + bundle-cycle 트리거 | B1→B2→B3→B4 권장 순서 4묶음 명세 |
+| 3 | "권장 순서대로 진행해" | bundle-cycle Mode 2 직렬 사이클 진입 |
+| 4 | (git 미초기화 발견) "http://gitlab.bi.co.kr/reujea/file.git origin 설정해" | file-pipeline 단독 git 저장소 첫 설정 (메타 룰 22 16건째) |
+| 5 | (src/.git 잔존 충돌) "src/ 내용만 복사 후 삭제" + "git 폴더 지웠어" | src/.git 완전 제거 + 1374 src 파일 정상 add |
+| 6 | B1~B4 사이클 진행 동의 + plan 승인 | Phase 202 본진입 실 IPC 완료 + plugin_e2e 3 시나리오 + fp-plugin-search placeholder |
+| 7 | "프로젝트 현행화 해" (본) | spec/prd 일괄 갱신 + lesson 76 등재 |
+
+### 핵심 산출 종합
+
+| 영역 | 결과 |
+|------|------|
+| Phase 진행 | 200/201/202 placeholder → **202 본진입 완료** + **203 placeholder** |
+| lesson | 75 → **76** (1건 등재: bundle-cycle B1~B4 + Phase 202 본진입 + file-pipeline 단독 git) |
+| 메타 룰 정식 | 17 → 17 (변동 없음 — 22가 17건째 도달, 누적만 증분) |
+| 메타 룰 누적 | 22: 15 → **17건** (본 세션 +2: git 저장소 단독 / src/.git 완전 삭제) |
+| 단위/통합 테스트 | 26 (lesson 75 시점) → **47 PASS** (+21: connection 3 + connection_pool 2 + call 4 + broadcast 3 + plugin_registry 1 + plugin_e2e 3 + search 4 + protocol +1) |
+| 신규 크레이트 | 0 → **2** (`fp-plugin-search` Phase 203 placeholder, +`connection_pool.rs` 신규 모듈) |
+| 회귀 자동화 | 9종 → **10종** (audit_stage_check.sh v2: plugin 영역 + 변수 stage 검사 분기) |
+| spec 본문 갱신 | architecture.md / domain-map.md / deprecated.md (메타 룰 30 자기 적용 12건째) |
+| prd 갱신 | roadmap.md / plugin-architecture-2026-06-04.md §6 Phase 진행 표 |
+| git 저장소 | (없음) → **단독 git 저장소** (origin: http://gitlab.bi.co.kr/reujea/file.git, 4 commit baseline+B2+B3) |
+
+### bundle-cycle B1~B4 사이클 요약
+
+| 묶음 | 영역 | 단위/통합 테스트 | 머지 SHA | 비고 |
+|------|------|------|---------|------|
+| **B1** | Task #22 원격 빌드 검증 | 26 PASS (protocol 11 + sdk 2 + core::plugin 13) | b22f8d5 (baseline) | placeholder 정합 게이트 통과 |
+| **B2** | Phase 202 본진입 실 IPC | +12 = 40 PASS | e598807 | fp-plugin-sdk::connection + ConnectionPool + call + broadcast + audit |
+| **B3** | 통합 테스트 + 회귀 자동화 | +3 = 43 PASS | 1185ea4 | plugin_e2e.rs 3시나리오 + audit_stage_check v2 |
+| **B4** | Phase 203 fp-plugin-search placeholder | +4 = 47 PASS | (file-pipeline 변경 0) | _rust_module/fp-plugin-search/ 신규 |
+
+### 후속 트리거 (Phase 202 본진입 후 누적)
+
+| # | 트리거 | 우선순위 |
+|---|------|------|
+| 1 | Windows cfg 분기 검증 (cargo-xwin Linux→Windows cross 빌드, lesson 71 패턴) | 🟡 본진입 안정성 검증 |
+| 2 | Phase 203 본진입 — fp-plugin-search placeholder의 LocalVectorStore + MMR + vec_io 이관 | 🔴 다음 Phase 진입점 |
+| 3 | _rust_module git 추적 (단일 진실원 위반 가능성, 메타 룰 19 후보) | 🟡 추적 부재 해소 |
+| 4 | Phase 207 어댑터 plugin 변환 (24 모듈에 bin target 추가) | 🟢 Phase 203~206 종결 후 |
+| 5 | git push 사용자 결정 — 본 사이클의 4 commit이 로컬만, origin push 보류 (`no-push-default`) | 🟡 사용자 명시 시 |
+
+---
 
 ## 2026-06-05 본 세션 종결 (Phase 200/201/202 placeholder 진입 + 정비, lesson 73~75)
 

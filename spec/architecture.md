@@ -1,5 +1,73 @@
 ---
-updated: 2026-06-05 (Phase 200/201/202 placeholder 진입 + 메타 룰 17 강화 + 27 정식 + 자동화 4종 누적 + lesson 73~75 등재 + binary plugin 4축 합의 — 본 세션 종결 시점)
+updated: 2026-06-10 (Phase 202 본진입 실 IPC 완료 + bundle-cycle B1~B4 직렬 사이클 + lesson 76 등재 + file-pipeline 단독 git 저장소 첫 설정 — 본 세션 종결 시점)
+---
+
+## 누적 변경 요약 (2026-06-10) — Phase 202 본진입 (실 IPC) 완료 (lesson 76)
+
+### 본 세션 진행 요약
+
+bundle-cycle 스킬로 B1→B2→B3→B4 4묶음 직렬 진행. 권장 순서 (lesson 75 후속 트리거 4건) 모두 해소.
+
+| 묶음 | 영역 | 산출 | 단위/통합 테스트 |
+|------|------|------|----|
+| **B1** | Task #22 원격 빌드 검증 | placeholder 26건 검증 (protocol 11 + sdk 2 + core::plugin 13) | 26 PASS |
+| **B2** | Phase 202 본진입 (실 IPC) | fp-plugin-sdk::connection + ConnectionPool + PluginRegistry::call 실 호출 + broadcast_event + audit 통합 | +12 = 40 PASS |
+| **B3** | 통합 테스트 + 회귀 자동화 | plugin_e2e.rs 3 시나리오 + audit_stage_check.sh `plugin.*` + 변수 stage 확장 | +3 = 43 PASS |
+| **B4** | Phase 203 fp-plugin-search placeholder | _rust_module/fp-plugin-search/ 신규 (lib.rs + Cargo.toml + fp-plugin.toml 매니페스트) | +4 = 47 PASS |
+
+### Phase 202 본진입 핵심 산출
+
+| 영역 | 변경 |
+|------|------|
+| 신규 파일 | `_rust_module/fp-plugin-sdk/src/connection.rs` (220줄, cross-platform IPC) + `core/plugin/connection_pool.rs` (90줄, lazy connect + 캐시) |
+| `core::plugin::PluginRegistry::call` | `Err(IpcNotYetImplemented)` 완전 제거 → 실 IPC + audit prepend + 결과 분기 |
+| `core::plugin::PluginRegistry::broadcast_event` | 신규 — event_kind serde tag 추출 + enabled + event_subscribe 매칭 plugin만 send_event (실패 silent) |
+| `PluginError` enum | `NotRunning {plugin_id, cause}` + `IpcTransport(String)` + `IpcProtocol(String)` 추가 / `IpcNotYetImplemented` 삭제 |
+| `FileProcessingService` | `plugin_registry: Arc<PluginRegistry>` 필드 추가 |
+| `McpState` | `plugin_registry: Arc<PluginRegistry>` 필드 추가 (라우팅은 B4 미진입, 필드만 노출) |
+| `ServiceBuilder` | `with_plugin_registry()` + build() 디폴트 `Arc::new(PluginRegistry::new())` (lesson 21/27 회피 핵심) |
+| `build_service` | `PluginRegistry::new().with_audit(Arc::clone(&audit)).discover(&paths.plugins)` 통합 |
+| audit stage 신규 | `plugin.{plugin_id}.{method}` (변수 기반) — 메타 룰 24 정합 |
+
+### IPC wire 포맷
+
+- newline-delimited JSON (`BufReader::read_line` + `write_all`/`flush`)
+- 단일 connection 1쌍 양방향 (request/response + event)
+- cross-platform: `#[cfg(windows)] tokio::net::windows::named_pipe::*` / `#[cfg(unix)] tokio::net::UnixStream`
+- endpoint: `\\.\pipe\fp-plugin-{id}` (Windows) / `/tmp/fp-plugin-{id}.sock` (Unix)
+
+### 회귀 자동화 확장 (B3)
+
+`spec/benchmarks/scripts/audit_stage_check.sh`:
+- ALLOWED prefix에 `plugin` 추가
+- 신규 검사 패턴 — `let stage = format!("...")` 변수 기반 stage (Phase 202 본진입 시 등장한 새 패턴)
+- 자동화 9종 → **자동화 10종** (audit_stage_check v2 분기)
+
+### file-pipeline 단독 git 저장소 첫 설정
+
+본 세션 진입 직전 git 미초기화 상태 발견 → 사용자 합의로 `C:\dev\claude_workspaces\file-pipeline` git init + `http://gitlab.bi.co.kr/reujea/file.git` origin. 단독 저장소 (메타 룰 22 16건째 사용자 정책 경계 합의).
+
+- src/.git 잔존 (master, 4/14 생성) — 사용자 합의로 완전 삭제
+- _rust_module은 별도 워크스페이스 — file-pipeline git에 미포함 (현재 사이클 _rust_module 변경 추적 부재 = lesson 76 후속 트리거 후보)
+- 4 commit (baseline + B2 + B3 머지) — B4는 file-pipeline 측 변경 0이라 git 영향 없음
+
+### 본 세션 메타 룰 누적
+
+| 메타 룰 | 변경 |
+|---------|------|
+| **22 사용자 정책 경계 합의** | 15 → **17건** (본 세션 +2: git 저장소 단독 설정 / src/.git 완전 삭제) |
+| **17 release 재빌드 + 배포 의무** | 강화 정식 후속 — 본 세션은 Linux 원격 빌드만, Windows cross 빌드는 후속 트리거 |
+| **24 stage 명명 규칙** | `plugin.*` 영역 신규 + 변수 기반 stage 검사 자동화 — 메타 룰 24 정식 승격 후보 강화 |
+| **30 spec 본문 phase별 즉시 갱신** | 자기 적용 12건째 (본 architecture + domain-map + roadmap + deprecated 동시 갱신) |
+| **25 자기 적용 의무** | 9건째 — bundle-cycle 사이클 종결 직후 즉시 현행화 |
+
+### 후속 트리거
+
+- **Windows cfg 분기 검증** — 본 세션 Linux 원격 빌드만. `cargo-xwin` (lesson 71)으로 named_pipe cfg 분기 별도 검증
+- **Phase 203 본진입** — fp-plugin-search placeholder의 LocalVectorStore + MMR + vec_io 본체 이관
+- **_rust_module git 추적** — 본 사이클 _rust_module/fp-plugin-search/ 등 변경이 file-pipeline git 밖. 단일 진실원 위반 가능성 (메타 룰 19 후보)
+- **Phase 207 어댑터 plugin 변환** — 24 어댑터 (embedding 6 / llm 7 / storage 5 / notify 2 / rerank 3 / verify 1)에 bin target 추가
+
 ---
 
 ## 누적 변경 요약 (2026-06-05 후속) — Phase 200~202 placeholder 진입 (lesson 75 + Q2/Q3 후속)

@@ -14,7 +14,7 @@ meta_rule_label:
   dimension_a: "🟢 본질 도메인 일치 (host + plugin 아키텍처는 본 솔루션의 표면적 과다를 직접 해결)"
   dimension_b: "🟢 추상화 매칭 완전 — tasty가 같은 Rust 단일 바이너리 + workspace + IPC plugin"
   classification: "메타 룰 20 8건째 누적"
-status: "결정 확정 (2026-06-04 사용자 합의). 2026-06-05 §2-A 재합의 (별도 빌드 + PIPELINE_BASE/plugins/ 런타임 배치) + Phase 200 placeholder 진입"
+status: "결정 확정 (2026-06-04 사용자 합의). 2026-06-05 §2-A 재합의 (별도 빌드 + PIPELINE_BASE/plugins/ 런타임 배치) + Phase 200~202 placeholder. 2026-06-10 Phase 202 본진입 완료 + Phase 203 placeholder (lesson 76, bundle-cycle B1~B4)"
 updated: 2026-06-05 (§2-A 사용자 합의 4축 재정의 + lesson 75 등재)
 ---
 
@@ -318,8 +318,8 @@ impl PluginRegistry {
 |-------|------|------|
 | **200 ✅ (2026-06-05)** | `fp-plugin-protocol` + `fp-plugin-sdk` placeholder + workspace 등록 + `ResolvedPaths.plugins` | lesson 16 단계 0 통과 (placeholder cargo check 42s + 4 단위 테스트 PASS) |
 | **201 ✅ (2026-06-05 Q2)** | PluginManifest + parse_manifest_toml + core/plugin/{permission_gate, handle, registry} + 20 단위 테스트 (예정 — 원격 검증) | tasty 직접 흡수, lesson 16 단계 1. `PluginRegistry::call` 은 `IpcNotYetImplemented` (Phase 202 대기) |
-| **202** | IPC bus (named pipe / domain socket) + wire 프로토콜 + audit 통합 | trace_id 자동 prepend |
-| **203** | **첫 plugin: fp-plugin-search** (4 MCP 도구 외부 이관) | LocalVectorStore + MMR + vec_io 본체 이관 |
+| **202 ✅ (2026-06-10 B2/B3)** | IPC bus (named pipe / domain socket) + wire 프로토콜 + audit 통합 | **본진입 완료** — fp-plugin-sdk::connection (cross-platform Connection + endpoint_path) + core/plugin/connection_pool.rs + PluginRegistry::{call, broadcast_event} 실 구현. `IpcNotYetImplemented` 삭제 + `NotRunning/IpcTransport/IpcProtocol` 추가. audit stage `plugin.{id}.{method}`. trace_id 자동 prepend. 47 단위/통합 테스트 PASS. lesson 76 |
+| **203 partial ✅ (2026-06-10 B4)** | **첫 plugin: fp-plugin-search** placeholder (lesson 16 단계 0) | _rust_module/fp-plugin-search/ 신규 (Cargo.toml + lib.rs + fp-plugin.toml 매니페스트). PLUGIN_ID + CONTRIBUTED_TOOLS 4건 + Plugin trait 골격. 4 단위 테스트 PASS. **본진입(LocalVectorStore + MMR + vec_io 본체 이관)은 다음 세션 대기** |
 | **204** | fp-plugin-kg + fp-plugin-lint + fp-plugin-crossref + fp-plugin-dedup | 검색·검증 영역 |
 | **205** | fp-plugin-{setup,optimize,signal,todo} | 운영 plugin 4종 |
 | **206** | fp-plugin-{llm-cache,pii,c1-thresholds,grimoire,topic,wiki-export,wikilink,purge,reindex,audit-analyzer} | 영역 plugin 10종 |
