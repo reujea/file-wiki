@@ -431,14 +431,3 @@ async fn bench_real_docs_from_file_test() {
         inbox_files.len()
     );
 }
-
-// step-o2 partial 해소 추가 (2026-06-17)
-impl file_pipeline_core::ports::outbound::OutboundManifest for HashEmbedder {
-    fn id(&self) -> &str { "fp-outbound-embedding-hash" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("hash")
-    }
-}

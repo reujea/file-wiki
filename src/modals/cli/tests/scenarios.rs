@@ -386,14 +386,3 @@ fn test_registry_sections_for_types_dedup() {
     // "공통"은 중복 제거되어 1번만
     assert_eq!(sections.len(), 3); // 공통, A전용, B전용
 }
-
-// step-o2 partial 해소 (2026-06-17): integration test mock OutboundManifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for TestLlm {
-    fn id(&self) -> &str { "fp-outbound-llm-test-scenarios" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Llm
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("test-scenarios")
-    }
-}

@@ -1,8 +1,9 @@
 //! `RawTransport` 채널 — transport-flatten-1 step-t1 (2026-06-17) 정합.
 //!
 //! 본질 재정의 3차 (plugin-architecture-2026-06-04.md §3-C): **Output adapter = raw I/O 만**.
-//! 기존 `OutboundManifest` super-trait (outbound-umbrella-1, 도메인 메타데이터 우산) = **폐기 대상**
-//! (step-t6 deprecated.md 위임). 도메인 로직 (telegram mode/sqlite mapping/48h/50MB, Notion page-attach,
+//! 기존 `OutboundManifest` super-trait (outbound-umbrella-1, 도메인 메타데이터 우산) = **폐기 완료**
+//! (plugin-sdk-1 step-p7, 2026-06-18 — outbound/mod.rs 본체 + 6 port super-trait bound + 어댑터/테스트
+//! impl 전량 제거). 도메인 로직 (telegram mode/sqlite mapping/48h/50MB, Notion page-attach,
 //! LLM 형식+파싱, fastembed batch 등 9 영역) = plugin 본문 이관 (step-t4).
 //!
 //! adapter 잔류 책임 = **순수 전송 채널 호출만**. 4 transport 채널:
@@ -25,7 +26,7 @@
 //! - 24 어댑터 transport 호출 단순화 + 도메인 로직 마킹 — step-t3
 //! - 도메인 로직 9 영역 plugin 본문 이관 — step-t4
 //! - telegram_storage.rs 291→~50줄 검증 + plugin manifest — step-t5
-//! - OutboundManifest 폐기 위임 (deprecated.md) + spec 정합 — step-t6
+//! - OutboundManifest 폐기 완료 (plugin-sdk-1 step-p7) + spec 정합 — step-p8
 
 use anyhow::Result;
 use async_trait::async_trait;

@@ -402,36 +402,6 @@ mod tests {
         fn is_configured(&self) -> bool { false }
     }
 
-    // step-o2 partial 해소 (2026-06-17): test mock OutboundManifest 박힘 (super-trait 의무)
-    impl crate::ports::outbound::OutboundManifest for TestLlm {
-        fn id(&self) -> &str { "fp-outbound-llm-test" }
-        fn category(&self) -> crate::ports::outbound::OutboundCategory { crate::ports::outbound::OutboundCategory::Llm }
-        fn capabilities(&self) -> crate::ports::output::ResourceCapabilities {
-            crate::ports::output::ResourceCapabilities::standard("test")
-        }
-    }
-    impl crate::ports::outbound::OutboundManifest for TestEmbedder {
-        fn id(&self) -> &str { "fp-outbound-embedding-test" }
-        fn category(&self) -> crate::ports::outbound::OutboundCategory { crate::ports::outbound::OutboundCategory::Embedding }
-        fn capabilities(&self) -> crate::ports::output::ResourceCapabilities {
-            crate::ports::output::ResourceCapabilities::standard("test")
-        }
-    }
-    impl crate::ports::outbound::OutboundManifest for TestNotification {
-        fn id(&self) -> &str { "fp-outbound-notify-test" }
-        fn category(&self) -> crate::ports::outbound::OutboundCategory { crate::ports::outbound::OutboundCategory::Notify }
-        fn capabilities(&self) -> crate::ports::output::ResourceCapabilities {
-            crate::ports::output::ResourceCapabilities::standard("test")
-        }
-    }
-    impl crate::ports::outbound::OutboundManifest for TestNullRemoteStorage {
-        fn id(&self) -> &str { "fp-outbound-storage-test-null" }
-        fn category(&self) -> crate::ports::outbound::OutboundCategory { crate::ports::outbound::OutboundCategory::Storage }
-        fn capabilities(&self) -> crate::ports::output::ResourceCapabilities {
-            crate::ports::output::ResourceCapabilities::standard("test-null")
-        }
-    }
-
     fn build_service(tmp: &TempDir) -> FileProcessingService {
         let inbox = tmp.path().join("inbox");
         let processed = tmp.path().join("processed");

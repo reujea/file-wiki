@@ -262,3 +262,53 @@ on_timeout = "continue"
 **판단**: t3 "27 어댑터 RawTransport 배선 교체"는 순효익 불명확(module 위임=실익0, 직호출=헛수고) + plugin 이관처 미실재. **host plan 재설계 위임** (사용자 결정). 코드 변경 0 = sniff 보고만.
 
 **정형 — plan 전제 사전 검증 의무 (메타 룰 18 확장)**: 광범위 plan step 진입 전 = (a) baseline 수치 grep 실측 + (b) **이관 대상처(plugin/module) 실재 여부 grep** + (c) step 의존성 모순(빼면 갈 곳 있나) 검증. 셋 중 하나라도 미충족 = 코드 변경 전 host 보고. cycle 5 t3 = "단순 이전 추정 → 인프라 미완 실측"의 8번째 빗나감 = plan 자체가 미완 인프라를 전제한 첫 사례.
+
+## transport-flatten-1 종결(t3~t6 skipped) + plugin-sdk-1 step-p1 baseline 검증 (cycle 5, 2026-06-18, 코드 변경 0)
+
+- **host 재설계(옵션 B)**: transport-flatten-1 t3~t6 = skipped(history 보존). t1(raw_transport skeleton 104줄)+t2(4 구현체)는 실 산출 자산 유지. 신규 plugin-sdk-1(8 step) 위임.
+- **step-p1 baseline 검증 = 메타 룰 18 plan 첫 step 정식화 (정형의 plan 구조 흡수)**: "plan 전제 사전 검증 의무" 정형이 신규 plan 의 step-p1 으로 정식 편입 = 정형이 절차로 진화한 첫 사례.
+- **결정적 발견 (t3 차단 근거 정정)**: fp-plugin-protocol(405줄: IpcMessage/PluginManifest/HostEvent/IpcResponse) + fp-plugin-sdk(connection.rs 365줄 cross-platform IPC + Plugin trait id/handle_request/shutdown) + fp-plugin-search(69줄 선례) = **전부 `_rust_module/`에 이미 존재 + workspace 등록 + core/cli 의존 연결**(Phase 200~203 본진입, lesson 76). → **step-p2/p3/p4(신설/등록) = 이미 완료 = 검증만**. 실 잔여 = p5(telegram plugin 본문)/p6(단순화)/p7(폐기)/p8(spec).
+- **메타 교훈 — grep 범위 누락도 사전 검증이 차단**: cycle 5 step-t3 차단 시 "fp-plugin-protocol/sdk 미존재" 근거 = **`src/crates/`만 grep + `_rust_module/` 누락**한 오판. t3 차단 결론(코드 변경 회피) 자체는 옳았으나 근거가 부정확. **step-p1 baseline 검증이 정정** = 메타 룰 18 의 진가 = "추정 빗나감"뿐 아니라 **"이전 검증의 범위 누락"도 다음 검증이 잡는다**. grep 대상 디렉토리 범위(src vs _rust_module 외부 workspace) 명시 의무 = 정형 보강.
+- **TC.p1-fp-plugin-crates-exist** = `ls _rust_module/ | grep -c "fp-plugin-protocol\|fp-plugin-sdk"` = 2 (이미 존재 확인 — 신설 아님).
+
+## step-p5 telegram plugin 본문 신설 (cycle 5, 2026-06-18, 에이전트 위임 + 직접 재검증)
+
+- **신설**: `_rust_module/fp-plugin-storage-telegram` crate (lib.rs 354줄 + Cargo.toml + fp-plugin.toml + workspace.members 등록). 첫 실 도메인 로직 plugin(fp-plugin-search placeholder 다음).
+- **도메인 로직 이관**: 50MB pre-check + 48h delete window(chrono) + mode 분기(document/channel multipart / text sendMessage) + telegram_message_map sqlite(rusqlite 직접) + parse_send_response. telegram_storage.rs 원본 로직 self-contained 이관.
+- **Plugin trait 미완 반영 정형**: SDK `Plugin` trait = 현재 `id()`만 정의(handle_request 미정의). plugin 도 id()만 trait 구현 + 도메인 로직 = **pub async fn 본문**(SDK 완성 시 trait 승격 예정 주석). **미완 인프라 위에 본문 선준비** = lesson 76 placeholder 정형 계승 (골격 + 본문, trait 연결은 SDK 진화 후).
+- **plugin 독립성 정형**: file-pipeline core/adapters 의존 0(fp-plugin-sdk + workspace crate만) = IPC 경계. reqwest multipart feature 추가 + rusqlite 0.31 bundled 명시(workspace dep 부재 시 crate 명시). `#![forbid(unsafe_code)]` + unwrap 0.
+- **검증**: cargo check 0/0 + `cargo test --lib` **9 passed**(1 ignored live_upload) + file-pipeline 본체 영향 0.
+- **직접 재검증 정형 보강 — 의심도 실측으로 해소**: 초기 `cargo test`(--lib 없이) "0 tests" + `sed` 범위 밖 의존 누락으로 reqwest/rusqlite 부재 의심 → `--lib` 명시 재실행 9 passed + Cargo.toml 전체 grep 으로 의존 실재 확인. **에이전트 보고 정확 입증**. lesson #14 R1 = 타 보고 비신뢰뿐 아니라 **자기 의심도 실측으로 해소**(추측 단언 금지 양방향).
+- **step-p6 결정점(에이전트 Q1~Q3)**: download/list plugin 이관 여부 / mcp_tool 명명 메타 룰 24(`storage.upload`) 정합 / SDK handle_request 정의 시 IpcMessage.method 디스패처. = host 명시 대기.
+- **TC.p5-plugin-independent** = `grep -c "file-pipeline\|file_pipeline" fp-plugin-storage-telegram/Cargo.toml` 의 실 dependency 항목(description/주석 제외) = 0.
+
+## step-p6 telegram_storage 단순화 (cycle 5, 2026-06-18, 에이전트 위임 + 직접 재검증)
+
+- **단순화**: telegram_storage.rs **331→105줄(-68%)**. 제거: 50MB/48h 상수 + TELEGRAM_MAP_SCHEMA + parse_send_response/open_db/api_url + upload/download/list/delete 본문(multipart/sendMessage/getFile/sqlite/48h) + reqwest/rusqlite use + client/db_path 필드. 도메인 메서드 4 = `delegated!` macro = plugin io.file-pipeline.storage-telegram 위임 bail stub. 잔류: struct 최소 + new + is_configured + capabilities + OutboundManifest(step-p7 영역).
+- **사전 확인 = 미활성 어댑터 안전 정형**: telegram_storage = build_service/shared 미활성(실 사용처 0, 단위 테스트 0) → 단순화 런타임 손실 0. **step-t3(활성 어댑터 광역)과 결정적 차이** = 미연결 어댑터는 단순화 안전. 사전 grep(build_service 활성화 여부)으로 안전 경계 확정.
+- **아키텍처 제약 반영 (Q3 default 정정)**: host default Q3 = "adapter → PluginRegistry::call IPC 디스패처"였으나, 사전 grep 으로 **어댑터=PluginRegistry(core) 접근 불가**(adapters→core registry 경로 부재) 확인 → IPC 디스패처 대신 **bail stub + 위임 주석**(SDK handle_request 미완 + registry 경로 부재 = 과도기). **host default 도 사전 grep 으로 검증 = 메타 룰 18 양방향**(baseline뿐 아니라 host 가이드도 실측 검증).
+- **검증**: workspace check 0 + nextest **509/509**(flaky bench 명세 필터 비재현, 직접 실측) + Tauri 0.
+- **step-p7/p8 결정점(에이전트 Q1~Q3)**: OutboundManifest 폐기 시 어댑터 manifest → plugin manifest 단일화 흡수 / RemoteStoragePort impl 자체 향후 제거 + PluginRegistry 라우팅 대체(stub=과도기) / slack·webdav 등 미활성 어댑터 동일 단순화 포함 여부. = host 명시 대기.
+- **TC.p6-telegram-no-domain** = telegram_storage.rs 의 multipart/rusqlite/reqwest::Client/50MB 상수 실 코드(주석 제외) = 0.
+
+## step-p7 OutboundManifest 완전 폐기 (cycle 6, 2026-06-18, 에이전트 위임 + 직접 재검증) — transport-flatten-1 t6 흡수
+
+본질 재정의 3차 2/3 plan(transport-flatten-1)이 t3 차단으로 skipped 되며 떠넘긴 **OutboundManifest super-trait 완전 폐기**를 plugin-sdk-1 step-p7 이 종결. cycle 5 worker 가 in_progress 마킹 후 코드 변경 0 으로 종료 → cycle 6 재개.
+
+- **사전 baseline 검증 (메타 룰 18 plan step-p1 정형 계승)**: 폐기 전 grep 으로 **OutboundManifest = 호출처 0건의 死 super-trait** 실측 — `OutboundCategory::` 사용은 전부 impl 본문 내부(category() 메서드), `dyn/as OutboundManifest`·외부 `.config_keys()`/`.modes()` 호출 0건. → 순수 삭제(타입/trait 깨짐 위험 0) 확정 후 진입. **"광범위 삭제 전 = 진짜 死코드인지 호출처 grep" = step-t3 차단 정형의 양성 버전**(차단이 아니라 안전 진행 근거).
+- **폐기 범위 4단계**: (1) output.rs 6 port super-trait bound 제거(LLMPort/RemoteStoragePort/EmbeddingPort/NotificationPort/VerificationPort/RerankerPort 의 `: OutboundManifest +`) (2) 어댑터/service/cached_llm impl **32건** 제거 (3) 통합·벤치 테스트 impl **21건** 제거 (4) `core/ports/outbound/` 디렉토리 + `ports/mod.rs::pub mod outbound` 등록 해제. **총 53 impl 블록**.
+- **위임 판단 정형 (cycle 5 정형 적용)**: 53 블록이 41 파일 산재 + 패턴 일정(id/category/capabilities 3 메서드) = **광범위 + 기계적** = 에이전트 5분할 위임(adapters 3 그룹 + 테스트 2 그룹). service.rs/cached_llm.rs(테스트 모듈 내부 = 신중) + output.rs(6 bound = 핵심) = 직접 처리. **규모 기반 위임 + 핵심/신중 영역 직접 = cycle 5 정형 계승**.
+- **검증 (remote-build-only 정합, 원격 Linux 172.16.13.45)**: `cargo check --all` 0/0 + `cargo build --tests --all` 통과(lesson #21/#27 — check 는 lib만, 통합 테스트 빌드 별도 의무) + Tauri app `cargo check` 통과 + `cargo nextest run --all` (bench 제외) **489/489**. 
+- **사이드 발견 — Tauri icon.png 누락(무관 확정)**: app `generate_context!`(main.rs:218) 가 `icons/icon.png` 요구하나 로컬·원격 모두 부재(tauri.conf.json 은 icon.ico 참조) = **코드/config 불일치 기존 환경 이슈**. 더미 png 생성 후 app check Finished 0 → **OutboundManifest 폐기 회귀 0 확정**. lesson #14 R1 = 자기 의심(이 에러가 내 작업 탓인가)도 실측으로 해소.
+- **사이드 — bench_scale_5000 nextest timeout(무관)**: 120s 초과 TIMEOUT = 5000문서 성능 벤치(원격 Linux 느림), 폐기와 무관. bench 제외 필터로 489/489 PASS = 실 회귀 0 명확화. (feedback_bench_3runs + lesson 79 step-m5 flaky 정형 정합).
+- **lesson 77 1-cycle 폐기 정형**: 2026-06-16 도입(outbound-umbrella-1 OutboundManifest)→2026-06-18 폐기 = **1 cycle 수명**. 추상화 진영의 정점(lesson 77)이 본질 재정의 3차(raw I/O)로 즉시 폐기 = "추상화는 본질 재정의의 가속 비용" 실증. 메타 룰 22(사용자 정책 경계) 후속 = 도입/폐기 모두 사용자 발화 단일 트리거.
+- **TC.p7-no-outbound-manifest** = `grep -rc "OutboundManifest\|OutboundCategory\|ports::outbound" crates/ modals/` 의 실 코드(doc 주석 제외) = 0.
+- **TC.p7-outbound-dir-gone** = `! test -d crates/core/src/ports/outbound && grep -c "pub mod outbound" crates/core/src/ports/mod.rs` = 0.
+
+## step-p8 spec 정합 (cycle 6, 2026-06-18, 직접 편집 — 단일 진실원 위임) — plugin-sdk-1 완결
+
+- **단일 진실원 위임 (메타 룰 19 정합)**: OutboundManifest 폐기의 단일 진실원 = `spec/deprecated.md` §삭제됨(엔트리 신설 — 53 impl + 디렉토리 + 검증 수치 + 재도입 트리거). 나머지 문서는 폐기 반영 + deprecated.md 링크.
+- **정정 4 문서**: (1) deprecated.md 엔트리 + 헤더 updated 날짜 (2) domain-map.md 공통 우산 trait L200 + RemoteStoragePort 표 L344 = 폐기 반영 (3) architecture.md outbound 우산 § = 역사 기록 보존 + 머리에 ⚠️ 폐기 안내(2026-06-18 step-p7) (4) plugin-architecture Phase 208 = OutboundManifest::config_keys/modes 활용 전제 → plugin manifest(`fp-plugin.toml`) 기반 재설계.
+- **history 보존 vs current 정합 정형 (step-m5 계승)**: architecture.md outbound-umbrella-1 § = 2026-06-16 도입 시점 작업 기록 = **삭제 아니라 머리에 폐기 안내 추가**(히스토리 보존). "Phase N 에 이렇게 했다"=보존 / "지금 시스템 이렇다"=정정 기준 적용. plugin-architecture Phase 208 = **미래 계획 = 정정**(폐기된 API 전제 금지).
+- **plugin-sdk-1 plan 완결**(p1 baseline + p5 telegram plugin + p6 단순화 + p7 폐기 + p8 spec). p2/p3/p4 skipped(fp-plugin crate 기존재). 본질 재정의 3차 raw I/O 영역 = OutboundManifest 폐기로 핵심 종결(도메인 로직 plugin 본문 이관은 SDK handle_request 완성 후 후속).
+- **코드 변경 0(문서만) = 빌드 검증 불필요**(step-m4 정형 정합).

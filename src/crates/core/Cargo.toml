@@ -18,6 +18,11 @@ tokio       = { workspace = true }
 reqwest     = { workspace = true }
 thiserror   = "1"
 
+# cycle 7 module-storage-db-1 step-d2 — 도메인 타입 + 출력 포트 단일 진실원.
+# core는 본 crate를 re-export 하여 file_pipeline_core::domain::* / ports::* 경로 호환 유지.
+# module-storage-db(api/impl)도 본 crate만 의존 → core 무관 → 순환 없음.
+fp-domain-types    = { path = "../../../../_rust_module/fp-domain-types" }
+
 # Phase 201 — plugin protocol (host 측 PluginRegistry + permission gate)
 # plugin-architecture-2026-06-04.md §2-D / §5-C
 fp-plugin-protocol = { path = "../../../../_rust_module/fp-plugin-protocol" }

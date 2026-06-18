@@ -10,24 +10,13 @@
 //!
 //! 호출: `chunking.compute_quality` config가 true일 때만. 디폴트 false (lesson 30 패턴).
 
-use serde::{Deserialize, Serialize};
-
 use super::chunking::SemanticChunk;
 
-/// Adaptive Chunking 4지표 + 메타. Metadata.chunk_quality에 부착.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Default)]
-pub struct ChunkQualityMetrics {
-    /// Size Compliance — 100~1100 토큰 범위 청크 비율 (0.0~1.0)
-    pub sc: f32,
-    /// Block Integrity — 구조 블록 완전 유지 비율 (0.0~1.0)
-    pub bi: f32,
-    /// Intrachunk Cohesion — 청크 내 평균 코사인 (-1.0~1.0). None이면 임베딩 미적용
-    pub icc: Option<f32>,
-    /// Document Contextual Coherence — 윈도우 코사인 (-1.0~1.0). None이면 임베딩 미적용
-    pub dcc: Option<f32>,
-    /// 측정 시점 청크 수 (재현 추적용)
-    pub n_chunks: usize,
-}
+// `ChunkQualityMetrics`(순수 4지표 데이터)는 fp-domain-types 로 추출됨
+// (cycle 7 step-d2 — Metadata.chunk_quality 필드가 참조하므로 models와 동일 crate 필요).
+// 4지표 *계산* 로직은 SemanticChunk 의존이므로 core 잔류.
+// 기존 `file_pipeline_core::domain::chunking_quality::ChunkQualityMetrics` 경로는 re-export로 유지.
+pub use fp_domain_types::chunk_quality::ChunkQualityMetrics;
 
 /// SC 계산용 토큰 범위 (논문 §SC 기본값)
 pub const SC_MIN_TOKENS: usize = 100;

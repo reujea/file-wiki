@@ -480,14 +480,3 @@ mod tests {
         assert_eq!(caps.active_mode, "attach");
     }
 }
-
-// step-o2 (2026-06-16, outbound-umbrella-1): OutboundManifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for NotionStorageAdapter {
-    fn id(&self) -> &str { "fp-outbound-storage-notion" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Storage
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("notion")
-    }
-}

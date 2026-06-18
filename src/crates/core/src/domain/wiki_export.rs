@@ -304,33 +304,11 @@ fn generate_graph(
 
 // ── KG 쿼리 엔진 ──────────────────────────────────────────────
 
-/// KG 쿼리 결과
-#[derive(Debug, Clone, Serialize)]
-pub struct KgQueryResult {
-    pub nodes: Vec<KgNode>,
-    pub edges: Vec<KgEdge>,
-    pub paths: Vec<Vec<String>>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct KgNode {
-    pub id: String,
-    pub doc_types: Vec<String>,
-    pub date: String,
-    pub relation_count: usize,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct KgEdge {
-    pub source: String,
-    pub target: String,
-    pub relation: String,
-    /// Phase 83: 관계 origin
-    #[serde(default)]
-    pub origin: String,
-    #[serde(default)]
-    pub origin_label_ko: String,
-}
+// KG 쿼리 결과 타입(KgQueryResult/KgNode/KgEdge/KgStats)은 `fp-domain-types`로 추출됨
+// (cycle 7 step-d2 — GraphDBPort 반환형이므로 포트와 동일 crate 필요). 쿼리 *엔진*
+// (KgQueryEngine)은 VectorDBPort에 의존하는 도메인 로직이므로 core 잔류.
+// 기존 `file_pipeline_core::domain::wiki_export::{KgQueryResult, ...}` 경로는 re-export로 유지.
+pub use fp_domain_types::kg_types::{KgEdge, KgNode, KgQueryResult, KgStats};
 
 /// KG 쿼리 엔진 — _graph.json 데이터를 쿼리 가능하게 확장
 pub struct KgQueryEngine;
@@ -481,14 +459,7 @@ impl KgQueryEngine {
     }
 }
 
-#[derive(Debug, Clone, Serialize)]
-pub struct KgStats {
-    pub total_nodes: usize,
-    pub total_edges: usize,
-    pub isolated_nodes: usize,
-    pub hub_node: String,
-    pub hub_degree: usize,
-}
+// KgStats 정의는 fp-domain-types::kg_types 로 이관됨 (상단 re-export 참조).
 
 #[cfg(test)]
 mod tests {

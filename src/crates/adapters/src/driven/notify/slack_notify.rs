@@ -63,14 +63,3 @@ impl NotificationPort for SlackNotificationAdapter {
         self.inner.send_text(&format_summary_slack(s)).await.map_err(map_err)
     }
 }
-
-// step-o2 (2026-06-16, outbound-umbrella-1): OutboundManifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for SlackNotificationAdapter {
-    fn id(&self) -> &str { "fp-outbound-notify-slack" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Notify
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("slack")
-    }
-}

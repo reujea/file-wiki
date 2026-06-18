@@ -172,16 +172,6 @@ mod tests {
         }
     }
 
-    impl file_pipeline_core::ports::outbound::OutboundManifest for CountingLLM {
-        fn id(&self) -> &str { "fp-outbound-llm-counting-test" }
-        fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-            file_pipeline_core::ports::outbound::OutboundCategory::Llm
-        }
-        fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-            file_pipeline_core::ports::output::ResourceCapabilities::standard("counting-test")
-        }
-    }
-
     #[tokio::test]
     async fn test_cache_hit_skips_inner_call() {
         let tmp = tempfile::tempdir().expect("tempdir");
@@ -224,16 +214,5 @@ mod tests {
         std::fs::write(&test_file, b"v2 different").expect("write v2");
         let _ = cached.classify_and_process(&test_file, &registry).await.expect("v2");
         assert_eq!(inner.calls.load(Ordering::SeqCst), 2, "내용 변경 시 재호출");
-    }
-}
-
-// step-o2 partial 해소 (2026-06-17, outbound-umbrella-1): cached_llm OutboundManifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for CachedLLM {
-    fn id(&self) -> &str { "fp-outbound-llm-cached" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Llm
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("cached")
     }
 }

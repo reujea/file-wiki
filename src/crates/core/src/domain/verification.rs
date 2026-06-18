@@ -1,51 +1,14 @@
 use std::collections::HashMap;
 
 use regex::Regex;
-use serde::{Deserialize, Serialize};
 
 use super::models::{VerificationLevel, VerificationResult};
 
-/// 검증 기준 임계값
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(default)]
-pub struct VerificationThresholds {
-    pub structure_min: f64,
-    pub compression_min: f64,
-    pub compression_max: f64,
-    pub keyword_coverage_min: f64,
-    /// 원본 핵심 키워드가 가공본에 보존된 비율 (Phase 2: 양방향)
-    pub keyword_completeness_min: f64,
-    pub rouge_l_min: f64,
-    pub entity_preservation_min: f64,
-}
-
-impl Default for VerificationThresholds {
-    fn default() -> Self {
-        Self {
-            structure_min: 0.5,
-            compression_min: 0.05,
-            compression_max: 1.5,
-            keyword_coverage_min: 0.5,
-            keyword_completeness_min: 0.3,
-            rouge_l_min: 0.10,
-            entity_preservation_min: 0.5,
-        }
-    }
-}
-
-impl VerificationThresholds {
-    pub fn strict() -> Self {
-        Self {
-            structure_min: 0.9,
-            compression_min: 0.10,
-            compression_max: 0.70,
-            keyword_coverage_min: 0.85,
-            keyword_completeness_min: 0.5,
-            rouge_l_min: 0.25,
-            entity_preservation_min: 0.80,
-        }
-    }
-}
+// `VerificationThresholds`(순수 임계값 데이터)는 `fp-domain-types`로 추출됨
+// (cycle 7 step-d2 — DocTypeDef.thresholds 필드가 참조하므로 models와 동일 crate 필요).
+// 본 모듈의 검증 *로직*(ROUGE-L 등)은 VerificationLevel/Result에 의존하므로 core 잔류.
+// 기존 `file_pipeline_core::domain::verification::VerificationThresholds` 경로는 re-export로 유지.
+pub use fp_domain_types::verification_thresholds::VerificationThresholds;
 
 // ── ROUGE-L ─────────────────────────────────────────────────
 

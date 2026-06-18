@@ -7,11 +7,7 @@ use clap::{Parser, Subcommand};
 use tracing::{info, warn};
 use tracing_subscriber::EnvFilter;
 
-use file_pipeline_adapters::driving::terminal_resolution::TerminalDuplicateResolution;
-use file_pipeline_adapters::driving::terminal_sensitive::TerminalSensitiveNotification;
-use file_pipeline_core::domain::models::DocTypeRegistry;
 use file_pipeline_core::ports::output::RerankerPort;
-use file_pipeline_core::service::FileProcessingService;
 
 use file_pipeline_shared::{config, build_service};
 use file_pipeline_shared::config::{PipelineConfigExt, ResolvedPathsExt};
@@ -332,7 +328,7 @@ async fn main() -> Result<()> {
 
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
             let service = Arc::new(service);
 
             info!("=== file-pipeline 시작 ===");
@@ -506,7 +502,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
 
             let output_path = std::path::Path::new(&output);
             let report = file_pipeline_core::domain::wiki_export::WikiExporter::export(
@@ -551,7 +547,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
 
             let topic_path = std::path::Path::new(&file);
             if !topic_path.exists() {
@@ -579,7 +575,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
             let stats = service.vector_db.stats()?;
             println!("=== 통계 ===");
             println!("총 문서 수: {}", stats.total_documents);
@@ -592,7 +588,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
 
             use file_pipeline_core::domain::diagnostics;
             let stats = diagnostics::analyze_corpus(service.vector_db.as_ref())?;
@@ -672,7 +668,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
 
             match action {
                 KgAction::Neighbors { doc_id } => {
@@ -718,7 +714,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
             let service = Arc::new(service);
 
             let watcher = file_pipeline_adapters::driving::watcher::FileWatcher::new(
@@ -744,7 +740,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
 
             let embedding = service.embedding.embed(&query).await?;
             let mut results = match mode.as_str() {
@@ -845,7 +841,7 @@ async fn main() -> Result<()> {
                     paths.create_all()?;
                     let doc_types_path = config::resolve_doc_types_path(&paths);
                     let registry = config::load_doc_type_registry(&doc_types_path)?;
-                    let service = build_service_cli(&cfg, &paths, registry)?;
+                    let service = build_service(&cfg, &paths, registry)?;
 
                     let mut rr_sum = 0.0f64;
                     let mut count = 0;
@@ -872,7 +868,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
 
             println!("벤치마크: {} 문서 stub 가공", count);
             let base = tempfile::TempDir::new()?;
@@ -906,7 +902,7 @@ async fn main() -> Result<()> {
             paths.create_all()?;
             let doc_types_path = config::resolve_doc_types_path(&paths);
             let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
+            let service = build_service(&cfg, &paths, registry)?;
 
             let all = service.vector_db.list_all()?;
             let mut saved = 0usize;
@@ -973,19 +969,3 @@ fn copy_dir_recursive(src: &std::path::Path, dst: &std::path::Path) -> anyhow::R
     Ok(())
 }
 
-/// CLI 전용 build_service — 터미널 모드일 때 실제 TerminalResolution 사용
-fn build_service_cli(
-    cfg: &config::PipelineConfig,
-    paths: &config::ResolvedPaths,
-    registry: DocTypeRegistry,
-) -> Result<FileProcessingService> {
-    let mut service = build_service(cfg, paths, registry)?;
-
-    // CLI: stdin이 터미널이면 대화형 UI 활성화
-    if std::io::IsTerminal::is_terminal(&std::io::stdin()) {
-        service.duplicate_resolution = Arc::new(TerminalDuplicateResolution);
-        service.sensitive_notification = Arc::new(TerminalSensitiveNotification);
-    }
-
-    Ok(service)
-}

@@ -142,3 +142,14 @@ hyde_min_results = 3
 
 [notification_batch]
 summary_interval_secs = 30
+
+# cli-prompt-remove-1: CLI 대화형 프롬프트 폐기 → config 기반 자동 결정
+[duplicate_resolution]
+sha256_match = "skip"        # 완전 중복(SHA-256 동일) = 기존 유지 (default)
+semantic_match = "skip"      # 의미 유사 임계 = 기존 유지 (default)
+
+[sensitive_resolution]
+default_action = "move_only" # 민감 감지 = 격리만 (가공 부재, 안전 default)
+stub_summary_template = "민감 파일: {reason}"
+stub_keywords = ["sensitive"]
+move_to_sensitive_folder = true

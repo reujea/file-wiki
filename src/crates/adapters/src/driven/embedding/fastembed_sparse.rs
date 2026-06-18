@@ -127,14 +127,3 @@ mod tests {
         assert_eq!(v.len(), 0);
     }
 }
-
-// step-o2 (2026-06-16, outbound-umbrella-1): OutboundManifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for FastEmbedSparseAdapter {
-    fn id(&self) -> &str { "fp-outbound-embedding-fastembed-sparse" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("fastembed-sparse")
-    }
-}

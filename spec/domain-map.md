@@ -197,7 +197,7 @@ PIPELINE_BASE/
 
 **telegram = storage + notify 양쪽 어댑터** (`fp-outbound-storage-telegram` + `fp-outbound-notify-telegram`, CLAUDE.local.md bot 인프라 재사용). lesson 77 §개선 3 정합.
 
-**공통 우산 trait** (2026-06-16 신규): `core/ports/outbound/mod.rs` 안 `OutboundManifest` super-trait (id/category/capabilities/modes/config_keys). 6 port trait (RemoteStoragePort / EmbedderPort / LlmPort / NotifyPort / RerankerPort / VerifierPort) 모두 super-trait 박힘 의무 (현재 24 어댑터 manifest impl 완료, 6 port super-trait 박힘 = step-o2 partial 잔여 = 다음 cycle 의무).
+**공통 우산 trait** (2026-06-16 도입 → **2026-06-18 폐기**): 구 `core/ports/outbound/mod.rs::OutboundManifest` super-trait는 본질 재정의 3차(raw I/O) 정합으로 plugin-sdk-1 step-p7에서 **완전 폐기** (디렉토리 + 6 port super-trait bound + 53 impl 제거). capabilities/modes/config_keys 도메인 메타데이터는 plugin manifest(`fp-plugin.toml`) 이관, raw 전송은 `core/ports/raw_transport/` 4 채널로 대체. 단일 진실원 = `spec/deprecated.md` §삭제됨.
 
 전환 단위: **한 모듈 = 한 plugin** (binary plugin 4축 합의). 형제 모듈에 `[[bin]] name = "fp-outbound-*"` 추가 + main.rs (`fp_plugin_sdk::run::<P>()`) 작성.
 
@@ -341,7 +341,7 @@ PIPELINE_BASE/
 | 포트 | 파일 | 메서드 |
 |------|------|--------|
 | StoragePort | ports/output.rs:62 | compress_and_store, decompress_temp, delete_expired, read_header |
-| RemoteStoragePort | ports/output.rs | upload, download, list, delete, is_configured, **capabilities (Phase 92 H5)**. **2026-06-16 outbound 우산 재정의** = `core/ports/outbound/mod.rs::OutboundManifest` super-trait 박힘 의무 (현재 step-o2 partial 잔여 = 다음 cycle, lesson 77) |
+| RemoteStoragePort | ports/output.rs | upload, download, list, delete, is_configured, **capabilities (Phase 92 H5)**. (구 `OutboundManifest` super-trait bound는 2026-06-18 step-p7 폐기 — raw I/O 재정의. 단일 진실원 = deprecated.md) |
 
 ### 어댑터
 | 어댑터 | 파일 | 설명 |

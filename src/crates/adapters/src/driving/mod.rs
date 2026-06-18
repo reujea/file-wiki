@@ -1,4 +1,4 @@
-pub mod terminal_resolution;
-pub mod terminal_sensitive;
+pub mod auto_resolution;
+pub mod auto_sensitive;
 pub mod tray;
 pub mod watcher;

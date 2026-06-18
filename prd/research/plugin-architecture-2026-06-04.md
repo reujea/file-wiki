@@ -639,11 +639,13 @@ impl PluginRegistry {
 
 각 plugin = `[[bin]] name = "fp-outbound-*"` 박힘 + `main.rs (fp_plugin_sdk::run::<P>())` 패턴. host 측 = path 의존 → 매니페스트 의존 전환.
 
-### Phase 208 — outbound 우산 UI 자동 폼 + 회귀 가드
+### Phase 208 — outbound plugin manifest UI 자동 폼 + 회귀 가드
 
-- `OutboundManifest::config_keys()` 활용 = settings 표면 자동 폼 생성 (Pipeline 노드별)
-- `OutboundManifest::modes()` = mode 분기 UI 자동 노출 (telegram document/text/channel 등)
-- 회귀 가드: 신규 outbound 추가 시 = manifest impl 박힘 의무 (super-trait 강제 = lesson 78 sub-pattern 1 정합)
+> 갱신 (2026-06-18, step-p7 정합): `OutboundManifest` super-trait 폐기 → 본 Phase는 **plugin manifest(`fp-plugin.toml`) 기반**으로 재설계. config_keys/modes 메타데이터는 super-trait 메서드가 아니라 manifest 선언으로 노출.
+
+- plugin manifest `[config]` 키 선언 활용 = settings 표면 자동 폼 생성 (Pipeline 노드별)
+- plugin manifest `[modes]` 선언 = mode 분기 UI 자동 노출 (telegram document/text/channel 등)
+- 회귀 가드: 신규 outbound plugin 추가 시 = `fp-plugin.toml` manifest 박힘 의무 (manifest 부재 시 registry 등록 실패 = 누락 가드). 구 super-trait 컴파일 강제 방식은 폐기.
 
 ### Phase 209 — IPC bench + 5% 임계
 

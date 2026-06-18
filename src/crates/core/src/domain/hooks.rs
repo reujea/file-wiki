@@ -1,38 +1,9 @@
-use serde::{Serialize, Deserialize};
+//! Hook 실행 로직 — 순수 타입(HookEvent/HookDefinition)은 fp-domain-types로 추출됨 (cycle 7 step-d2).
+//!
+//! `HookRegistry::fire`는 tokio/reqwest 의존 도메인 로직이므로 core 잔류.
+//! 기존 `file_pipeline_core::domain::hooks::{HookEvent, HookDefinition}` 경로는 re-export로 유지.
 
-/// 이벤트 유형
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum HookEvent {
-    FileDetected,      // inbox 파일 감지
-    ProcessStart,      // 가공 시작
-    ProcessComplete,   // 가공 완료
-    VerifyFail,        // 검증 실패
-    SearchQuery,       // 검색 쿼리 수신
-}
-
-impl std::fmt::Display for HookEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            HookEvent::FileDetected => write!(f, "file_detected"),
-            HookEvent::ProcessStart => write!(f, "process_start"),
-            HookEvent::ProcessComplete => write!(f, "process_complete"),
-            HookEvent::VerifyFail => write!(f, "verify_fail"),
-            HookEvent::SearchQuery => write!(f, "search_query"),
-        }
-    }
-}
-
-/// 훅 정의
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct HookDefinition {
-    pub event: String,
-    #[serde(default)]
-    pub webhook_url: Option<String>,
-    #[serde(default)]
-    pub command: Option<String>,
-    #[serde(default)]
-    pub enabled: bool,
-}
+pub use fp_domain_types::hooks::{HookDefinition, HookEvent};
 
 /// 훅 레지스트리
 pub struct HookRegistry {
@@ -51,7 +22,8 @@ impl HookRegistry {
     /// 이벤트에 매칭되는 활성 훅 목록
     pub fn get_hooks(&self, event: &HookEvent) -> Vec<&HookDefinition> {
         let event_str = event.to_string();
-        self.hooks.iter()
+        self.hooks
+            .iter()
             .filter(|h| h.enabled && h.event == event_str)
             .collect()
     }
@@ -65,10 +37,7 @@ impl HookRegistry {
                 let payload = payload.clone();
                 tokio::spawn(async move {
                     let client = reqwest::Client::new();
-                    let _ = client.post(&url)
-                        .json(&payload)
-                        .send()
-                        .await;
+                    let _ = client.post(&url).json(&payload).send().await;
                 });
             }
             if let Some(ref cmd) = hook.command {

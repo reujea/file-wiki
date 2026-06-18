@@ -80,14 +80,3 @@ mod tests {
         assert!(null.list("").await.unwrap().is_empty());
     }
 }
-
-// step-o2 (2026-06-16, outbound-umbrella-1): OutboundManifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for NetworkStorageAdapter {
-    fn id(&self) -> &str { "fp-outbound-storage-network" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Storage
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("network")
-    }
-}

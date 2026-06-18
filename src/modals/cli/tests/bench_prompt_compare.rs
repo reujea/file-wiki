@@ -212,14 +212,3 @@ async fn bench_new_prompt_3docs() {
     eprintln!("║    신규: {:.1}초/파일, keywords 10~15개, search_hints 있음", total_secs / docs.len() as f64);
     eprintln!("╚══════════════════════════════════════════════════════════════╝");
 }
-
-// step-o2 partial 해소 (2026-06-17): integration test mock OutboundManifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for HashEmbedder {
-    fn id(&self) -> &str { "fp-outbound-embedding-hash" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("hash")
-    }
-}

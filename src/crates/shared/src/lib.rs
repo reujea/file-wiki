@@ -37,9 +37,9 @@ use file_pipeline_adapters::driven::notify::telegram_notify::TelegramNotificatio
 use file_pipeline_adapters::driven::storage::zstd_storage::ZstdStorageAdapter;
 use file_pipeline_adapters::driven::vector_db::local_store::LocalVectorStore;
 use file_pipeline_adapters::driven::verify::claude_verifier::ClaudeVerificationAdapter;
-use file_pipeline_adapters::stub::{
-    StubDuplicateResolution, StubEmbedder, StubLlm, StubSensitiveNotification,
-};
+use file_pipeline_adapters::driving::auto_resolution::AutoDuplicateResolution;
+use file_pipeline_adapters::driving::auto_sensitive::AutoSensitiveNotification;
+use file_pipeline_adapters::stub::{StubEmbedder, StubLlm};
 use file_pipeline_core::domain::classifier::SensitivityDetector;
 use file_pipeline_core::domain::models::DocTypeRegistry;
 use file_pipeline_core::service::FileProcessingService;
@@ -297,11 +297,11 @@ pub fn build_service(
         }
     };
 
-    // Tauri 모드: stdin이 없으므로 항상 Stub
+    // cli-prompt-remove-1: CLI 대화형 프롬프트 폐기 → config 기반 자동 결정 (GUI/CLI/watcher 공통)
     let duplicate_resolution: Arc<dyn file_pipeline_core::ports::input::DuplicateResolutionPort> =
-        Arc::new(StubDuplicateResolution);
+        Arc::new(AutoDuplicateResolution::new(cfg.duplicate_resolution.clone()));
     let sensitive_notification: Arc<dyn file_pipeline_core::ports::input::SensitiveNotificationPort> =
-        Arc::new(StubSensitiveNotification);
+        Arc::new(AutoSensitiveNotification::new(cfg.sensitive_resolution.clone()));
 
     // Phase 81: 호스트 도구 감지 결과를 settings.db에서 로드 (없으면 1회 감지 + 저장)
     let preprocessing = {

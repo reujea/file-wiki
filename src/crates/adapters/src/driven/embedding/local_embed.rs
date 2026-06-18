@@ -141,25 +141,3 @@ mod tests {
         assert!((norm - 1.0).abs() < 0.01, "L2 정규화: norm={:.4}", norm);
     }
 }
-
-// step-o2 (2026-06-16, outbound-umbrella-1): OutboundManifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for LocalEmbeddingAdapter {
-    fn id(&self) -> &str { "fp-outbound-embedding-local" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("local")
-    }
-}
-
-// step-o2 partial 해소 (2026-06-17): 누락 SensitivityAwereEmbeddingAdapter manifest 박힘
-impl file_pipeline_core::ports::outbound::OutboundManifest for SensitivityAwareEmbeddingAdapter {
-    fn id(&self) -> &str { "fp-outbound-embedding-sensitivity-aware" }
-    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
-        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
-    }
-    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
-        file_pipeline_core::ports::output::ResourceCapabilities::standard("sensitivity-aware")
-    }
-}
