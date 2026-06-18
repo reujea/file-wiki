@@ -191,6 +191,7 @@ component = "search-box"
 | **청킹** | `core/domain/chunking.rs` (semantic + hierarchy) | 가공의 본질 구조화 |
 | **메타데이터 구조** | `core/domain/models.rs::Metadata` | 데이터 스키마 — plugin이 읽기만 |
 | **DB 영속** | LocalVectorStore 본체는 plugin이지만 **DocStore + settings.db는 host** | plugin은 읽기, 쓰기는 host 주도 |
+| **DB 본체 crate** (cycle 7, 2026-06-18) | `_rust_module/module-storage-db` (SqliteSettingsRepo + LocalVectorStore) + `_rust_module/fp-domain-types` (도메인 타입 + 포트 trait 단일 진실원) | core/adapters/module-storage-db 모두 fp-domain-types 단방향 의존(순환 0). adapters는 thin re-export. 상세 = `spec/domain-map.md §도메인 타입 + DB 본체 분리` (메타 룰 19 단일 진실원) |
 | **audit 코어** | `core/audit.rs` + `core::AuditPort` | host가 모든 plugin IPC 호출 기록 |
 | **Plugin discovery + registry + permission gate** | 신규 `core/plugin/` | tasty 패턴 직접 흡수 |
 | **~~MCP server~~ + Tauri 진입점** | ~~`shared/mcp_server.rs`~~ (2026-06-17 본질 재정의 3차 = 완전 폐기) + `modals/app/` | **MCP 완전 폐기** (lesson 79 후보, 메타 룰 22 21건째). Tauri commands 만 host 외부 인터페이스. plugin contribute = §3-D step hook 으로 일원화 |

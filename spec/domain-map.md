@@ -1,5 +1,5 @@
 ---
-updated: 2026-06-10 (Phase 202 본진입 실 IPC 완료 + Phase 203 fp-plugin-search placeholder + plugin 도메인 본진입 반영. host = 파일 가공만. 외부 기능 모두 plugin. 단일 진실원: prd/research/plugin-architecture-2026-06-04.md)
+updated: 2026-06-18 (cycle 7 module-storage-db-1 d2~d4: fp-domain-types(도메인 타입+포트 trait 단일 진실원) + module-storage-db(DB 본체 impl) crate 추출 반영. core/adapters/module-storage-db 모두 fp-domain-types 의존, 순환 0. 이전: Phase 202 본진입 실 IPC + Phase 203 fp-plugin-search placeholder. host = 파일 가공만. 외부 기능 모두 plugin. 단일 진실원: prd/research/plugin-architecture-2026-06-04.md)
 ---
 
 # 도메인별 구성도
@@ -33,6 +33,46 @@ updated: 2026-06-10 (Phase 202 본진입 실 IPC 완료 + Phase 203 fp-plugin-se
 - 🟢 본질 도메인 일치 (host + plugin은 본 솔루션 표면적 과다 문제 직접 해결)
 
 상위 단일 진실원: `prd/research/plugin-architecture-2026-06-04.md`. 본 문서 §도메인 1 ~ 6 시계열은 Phase 200~209 진입 직전까지 자료로 보존, Phase 209 종결 시 host-plugin 매핑 본문으로 재작성 예정.
+
+## 도메인 타입 + DB 본체 분리 (cycle 7 module-storage-db-1, 2026-06-18)
+
+> **단일 진실원** (메타 룰 19): 도메인 타입 + 출력 포트 trait 정의는 `_rust_module/fp-domain-types`가 단일 진실원. `file_pipeline_core::domain::*` / `::ports::*`는 re-export shim(호출처 경로 호환). DB 영속 구현은 `_rust_module/module-storage-db`.
+
+### 배경 (d1 BLOCKED → 재설계)
+
+DB 본체(`SqliteSettingsRepo`/`LocalVectorStore`)를 외부 crate로 분리하려면 그 impl이 의존하는 도메인 타입·포트 trait를 core 밖에서도 참조할 수 있어야 한다. core에 두면 `module-storage-db → file_pipeline_core` 의존이 생겨 form-agnostic 위배 + 도메인 단일 진실원이 core에 박힌다. → 순수 타입 + 포트를 별도 crate로 추출.
+
+### fp-domain-types (도메인 타입 + 포트 단일 진실원)
+
+| 구성 | 내용 |
+|------|------|
+| 순수 타입 통째 이관 | `models` / `config_models` / `settings_models` / `vec_io` / `crossref_optimizer`(MinHashIndex 등) |
+| 로직 분리 후 순수 타입만 | `verification_thresholds`(←verification.rs) / `kg_types`(←wiki_export.rs) / `chunk_quality`(←chunking_quality.rs) / `hooks`=HookEvent+HookDefinition(←hooks.rs) |
+| 출력 포트 trait | `ports/output`(12 trait: LLM/Embedding/VectorDB/Storage/RemoteStorage/Notification/Verification/Reranker/Preprocess/ProcessingMetrics/Kg/Audit) + `ports/settings_repo`(SettingsRepoPort + 6 sub-trait) |
+
+core 측 = re-export shim. 로직 잔류: verification ROUGE-L / wiki_export `KgQueryEngine` / chunking_quality `compute_*` / hooks `HookRegistry`.
+
+### module-storage-db (DB 본체 impl)
+
+| 타입 | 책임 | 구현 포트 |
+|------|------|----------|
+| `SettingsDb` (settings_repo.rs, ←adapters sqlite.rs 2292) | settings.db 영속 | `SettingsRepoPort` + 6 sub-trait (Audit/Todo/Decision/Metric/HostTool/LlmCache) |
+| `LocalVectorStore` (local_store.rs, ←adapters local_store.rs 1079) | 인프로세스 벡터 DB | `VectorDBPort` |
+
+의존: `module-storage-db → fp-domain-types` 단방향 (file_pipeline_core 무의존, 순환 0). adapters/driven/{settings,vector_db}는 **thin re-export shim (d5 완료)** — `sqlite.rs`(2292→11줄) = `pub use module_storage_db::settings_repo::*`, `local_store.rs`(1079→8줄) = `pub use module_storage_db::local_store::*`. 기존 `file_pipeline_adapters::driven::{settings::sqlite,vector_db::local_store}::*` 경로 + `shared/settings_db.rs` re-export 체인 유지(호출처 변경 0). 코드 중복 해소.
+
+### HostToolRepo 책임 분리 (d3 역방향 결합 제거)
+
+`HostToolRepo::refresh`가 adapters `HostToolDetector::detect_full`을 직접 호출하던 결합(module-storage-db → adapters 역방향) 제거. trait는 **저장 전용**(`list_host_tools`/`host_tools_count`/`replace_host_tools`)으로 재설계. 감지(std::process 실행)는 adapters 책임, 감지+저장 조합은 `shared/host_tools_cache.rs` 자유함수가 담당.
+
+### 의존 방향 (단방향 불변식)
+
+```
+file_pipeline_core ──┐
+                     ├──> fp-domain-types  (도메인 타입 + 포트 trait)
+module-storage-db ───┘
+file_pipeline_adapters ──> file_pipeline_core (+ fp-domain-types re-export 경유)
+```
 
 ## Plugin 도메인 (Phase 200~203 본진입 완료, 2026-06-10)
 

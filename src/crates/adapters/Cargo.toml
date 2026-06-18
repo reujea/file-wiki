@@ -5,6 +5,8 @@ edition = "2021"
 
 [dependencies]
 file-pipeline-core = { path = "../core" }
+# DB 본체 (cycle 7 d3). adapters/driven/{settings,vector_db}는 본 crate의 thin re-export (d5)
+module-storage-db  = { path = "../../../../_rust_module/module-storage-db" }
 module-storage     = { path = "../../../../_rust_module/module-storage" }
 module-storage-api = { path = "../../../../_rust_module/module-storage-api" }
 module-notify      = { path = "../../../../_rust_module/module-notify" }
