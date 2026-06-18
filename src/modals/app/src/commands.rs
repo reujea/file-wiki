@@ -6,6 +6,7 @@
 use serde::Deserialize;
 use tauri::State;
 
+use file_pipeline_shared::config::PipelineConfigExt;
 use crate::state::AppState;
 
 // ── 통계 / 헬스 ─────────────────────────────────────────────
@@ -1236,7 +1237,7 @@ pub async fn setup_apply(
     let critical = apply_critical.unwrap_or(false);
     // settings.db로 snapshot 저장 시도 (실패해도 apply 진행)
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir).ok();
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir).ok();
     let result = file_pipeline_shared::setup_review::apply_advice_full(
         &cfg_path, &advice, &accepted_paths, critical, db.as_ref(),
     ).map_err(|e| e.to_string())?;
@@ -1257,7 +1258,7 @@ pub async fn setup_snapshot_list(limit: Option<u32>)
     -> std::result::Result<serde_json::Value, String>
 {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let snaps = db.list_snapshots(limit.unwrap_or(20) as usize).map_err(|e| e.to_string())?;
     let out: Vec<_> = snaps.into_iter().map(|s| serde_json::json!({
@@ -1277,7 +1278,7 @@ pub async fn setup_snapshot_rollback(snapshot_id: String, reason: String)
 {
     if snapshot_id.is_empty() { return Err("snapshot_id 필수".into()); }
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let snap = db.get_snapshot(&snapshot_id).map_err(|e| e.to_string())?
         .ok_or_else(|| format!("스냅샷 없음: {}", snapshot_id))?;
@@ -1295,7 +1296,7 @@ pub async fn setup_decision_log_list(limit: Option<u32>, snapshot_id: Option<Str
     -> std::result::Result<serde_json::Value, String>
 {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let entries = if let Some(snap_id) = snapshot_id {
         db.list_decisions_by_snapshot(&snap_id).map_err(|e| e.to_string())?
@@ -1333,7 +1334,7 @@ pub async fn setup_decision_log_list(limit: Option<u32>, snapshot_id: Option<Str
 #[tauri::command]
 pub async fn get_search_mode_stats() -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let rows = db.get_search_mode_counters().map_err(|e| e.to_string())?;
     let total: u64 = rows.iter().map(|(_, c, _)| *c).sum();
@@ -1348,7 +1349,7 @@ pub async fn get_search_mode_stats() -> std::result::Result<serde_json::Value, S
 #[tauri::command]
 pub async fn get_crag_stats() -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let rows = db.get_crag_counters().map_err(|e| e.to_string())?;
     let mut counts: std::collections::HashMap<String, u64> = std::collections::HashMap::new();
@@ -1417,7 +1418,7 @@ pub async fn get_processing_metrics(
 ) -> std::result::Result<serde_json::Value, String> {
     let stats = state.service.vector_db.stats().map_err(|e| e.to_string())?;
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let summary = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let summary = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .ok()
         .and_then(|db| db.get_processing_metric_summary().ok());
     let (verify_pass_rate, quarantine_rate, avg_process_time_ms, success, errors, quarantined) =
@@ -1467,7 +1468,7 @@ pub async fn auto_suggest_from_counters(
     _state: State<'_, AppState>,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let inserted = file_pipeline_shared::auto_suggester::suggest_from_counters(&db)
         .map_err(|e| e.to_string())?;
@@ -1484,7 +1485,7 @@ pub async fn accept_suggested_decision(
     decision_id: i64,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let cfg_path = file_pipeline_shared::config::find_config_path(None);
     let (path, after_value) = file_pipeline_shared::auto_suggester::apply_suggested(
@@ -1505,7 +1506,7 @@ pub async fn reject_suggested_decision(
     decision_id: i64,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     file_pipeline_shared::auto_suggester::reject_suggested(&db, decision_id)
         .map_err(|e| e.to_string())?;
@@ -1518,7 +1519,7 @@ pub async fn c1_thresholds_list(
     _state: State<'_, AppState>,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let rows = db.list_c1_thresholds().map_err(|e| e.to_string())?;
     Ok(serde_json::json!({
@@ -1543,7 +1544,7 @@ pub async fn c1_threshold_set(
     value: f64,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     db.set_c1_threshold(&key, value).map_err(|e| e.to_string())?;
     // C1 임계값은 auto_suggester가 매 호출마다 settings.db에서 read하므로 별도 reload 불필요 (live reload).
@@ -1556,7 +1557,7 @@ pub async fn pii_patterns_list(
     _state: State<'_, AppState>,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let rows = db.list_user_pii_patterns().map_err(|e| e.to_string())?;
     Ok(serde_json::json!({
@@ -1570,7 +1571,7 @@ pub async fn pii_patterns_list(
 /// settings.db에서 활성화된 사용자 PII 패턴을 읽어 service에 live reload.
 fn reload_service_pii(state: &State<'_, AppState>) -> Result<usize, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let patterns: Vec<(String, String)> = db.list_user_pii_patterns()
         .map_err(|e| e.to_string())?
@@ -1589,7 +1590,7 @@ pub async fn pii_pattern_add(
     enabled: Option<bool>,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     db.add_user_pii_pattern(&name, &pattern, enabled.unwrap_or(true))
         .map_err(|e| e.to_string())?;
@@ -1603,7 +1604,7 @@ pub async fn pii_pattern_remove(
     name: String,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let removed = db.remove_user_pii_pattern(&name).map_err(|e| e.to_string())?;
     let active_count = reload_service_pii(&state)?;
@@ -1616,7 +1617,7 @@ pub async fn clear_llm_cache(
     _state: State<'_, AppState>,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let deleted = db.clear_llm_cache().map_err(|e| e.to_string())?;
     Ok(serde_json::json!({ "deleted": deleted }))
@@ -1628,7 +1629,7 @@ pub async fn get_llm_cache_stats(
     _state: State<'_, AppState>,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db_opt = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir).ok();
+    let db_opt = file_pipeline_shared::settings_db::open_or_migrate(&data_dir).ok();
     let (entries, total_hits, avg_hits) = db_opt.as_ref()
         .and_then(|db| db.llm_cache_stats().ok())
         .unwrap_or((0, 0, 0.0));
@@ -1652,7 +1653,7 @@ pub async fn gc_llm_cache_now(
     max_entries: Option<u64>,
 ) -> std::result::Result<serde_json::Value, String> {
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir)
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir)
         .map_err(|e| e.to_string())?;
     let cap = match max_entries {
         Some(v) if v > 0 => v,
@@ -1730,7 +1731,7 @@ pub async fn setup_apply_modules(
     };
     let accepted: Vec<String> = changes.iter().map(|c| c.path.clone()).collect();
     let data_dir = file_pipeline_shared::config::find_data_dir(None);
-    let db = file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir).ok();
+    let db = file_pipeline_shared::settings_db::open_or_migrate(&data_dir).ok();
     let context = serde_json::json!({ "module_ids": module_ids });
     let result = file_pipeline_shared::setup_review::apply_advice_full_with_log(
         &cfg_path, &advice, &accepted, apply_critical, db.as_ref(),
@@ -1768,27 +1769,11 @@ pub async fn get_anomaly_report(state: State<'_, AppState>) -> Result<serde_json
     }))
 }
 
-/// Phase 92 H3: MCP 도구 다차원 분류 카탈로그 반환.
-/// Mirage Command 3차원 등록 패턴 흡수.
-#[tauri::command]
-pub async fn get_mcp_tool_catalog_full(_state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let catalog = file_pipeline_shared::mcp_server::mcp_tool_catalog_full();
-    Ok(serde_json::json!({
-        "tools": catalog.iter().map(|m| serde_json::json!({
-            "name": m.name,
-            "mutates": m.mutates,
-            "category": m.category.as_str(),
-            "cost": m.cost.as_str(),
-        })).collect::<Vec<_>>(),
-        "total": catalog.len(),
-    }))
-}
-
 /// Phase 92 H5: 현재 활성 원격 저장소 어댑터의 capability 반환.
 /// Mirage Resource 패턴 흡수. Notion mode 분기 노출.
 #[tauri::command]
 pub async fn get_remote_storage_capabilities(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
-    let caps = state.service.remote_storage.capabilities();
+    let caps = file_pipeline_core::ports::output::RemoteStoragePort::capabilities(state.service.remote_storage.as_ref());
     Ok(serde_json::json!({
         "backend": caps.backend,
         "can_upload": caps.can_upload,

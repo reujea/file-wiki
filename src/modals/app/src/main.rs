@@ -139,7 +139,6 @@ fn main() {
             commands::setup_apply_modules,
             // Phase 93 GUI 가시화 (Phase 91 A2 / 92 H1·H3·H5)
             commands::get_anomaly_report,
-            commands::get_mcp_tool_catalog_full,
             commands::get_remote_storage_capabilities,
             commands::get_pii_mask_config,
         ])
@@ -159,7 +158,7 @@ fn main() {
             // 임계값 미달이면 no-op. 사용자는 Decision Log에서 검토 후 accept_suggested_decision 호출.
             std::thread::spawn(|| {
                 let data_dir = file_pipeline_shared::config::find_data_dir(None);
-                match file_pipeline_shared::settings_db::SettingsDb::open_or_migrate(&data_dir) {
+                match file_pipeline_shared::settings_db::open_or_migrate(&data_dir) {
                     Ok(db) => {
                         match file_pipeline_shared::auto_suggester::suggest_from_counters(&db) {
                             Ok(n) if n > 0 => tracing::info!("[c1-startup] 자동 추천 {}건 INSERT", n),

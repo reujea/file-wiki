@@ -162,6 +162,16 @@ mod tests {
         }
     }
 
+    impl file_pipeline_core::ports::outbound::OutboundManifest for RecordingNotificationAdapter {
+        fn id(&self) -> &str { "fp-outbound-notify-recording-test" }
+        fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+            file_pipeline_core::ports::outbound::OutboundCategory::Notify
+        }
+        fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+            file_pipeline_core::ports::output::ResourceCapabilities::standard("recording-test")
+        }
+    }
+
     struct FailingNotificationAdapter;
 
     #[async_trait]
@@ -194,6 +204,16 @@ mod tests {
 
         async fn send_summary(&self, _summary: &ProcessingSummary) -> Result<()> {
             anyhow::bail!("summary failed")
+        }
+    }
+
+    impl file_pipeline_core::ports::outbound::OutboundManifest for FailingNotificationAdapter {
+        fn id(&self) -> &str { "fp-outbound-notify-failing-test" }
+        fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+            file_pipeline_core::ports::outbound::OutboundCategory::Notify
+        }
+        fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+            file_pipeline_core::ports::output::ResourceCapabilities::standard("failing-test")
         }
     }
 
@@ -243,5 +263,26 @@ mod tests {
         assert!(null.send_completion("f", "t", &stats).await.is_ok());
         let summary = ProcessingSummary::default();
         assert!(null.send_summary(&summary).await.is_ok());
+    }
+}
+
+// step-o2 partial 해소 (2026-06-17, outbound-umbrella-1): notify mock OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for NullNotificationAdapter {
+    fn id(&self) -> &str { "fp-outbound-notify-null" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Notify
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("null")
+    }
+}
+
+impl file_pipeline_core::ports::outbound::OutboundManifest for CompositeNotificationAdapter {
+    fn id(&self) -> &str { "fp-outbound-notify-composite" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Notify
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("composite")
     }
 }

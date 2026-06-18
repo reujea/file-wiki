@@ -1,8 +1,10 @@
 pub mod embedding;
 pub mod llm;
-pub mod notification;
+pub mod notify;
 pub mod preprocessing;
-pub mod reranking;
+pub mod rerank;
+pub mod settings;
 pub mod storage;
+pub mod transport;
 pub mod vector_db;
-pub mod verification;
+pub mod verify;

@@ -1,6 +1,6 @@
 //! file-pipeline-shared — 공유 라이브러리
 //!
-//! 모든 모달(CLI, APP, MCP)이 공유하는 config, build_service.
+//! 모든 모달(CLI, APP)이 공유하는 config, build_service.
 
 pub mod audit_anomaly;
 pub mod auto_suggester;
@@ -11,7 +11,6 @@ pub mod config;
 pub mod config_snapshot;
 pub mod credential_store;
 pub mod host_tools_cache;
-pub mod mcp_server;
 pub mod platform;
 pub mod secrets;
 pub mod settings_db;
@@ -19,7 +18,6 @@ pub mod setup_dryrun;
 pub mod setup_modules;
 pub mod setup_review;
 pub mod test_helpers;
-pub mod tray;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -31,14 +29,14 @@ use tracing::{info, warn};
 use file_pipeline_adapters::driven::embedding::claude_embed::ClaudeEmbeddingAdapter;
 use file_pipeline_adapters::driven::embedding::openai_embed::OpenAIEmbeddingAdapter;
 use file_pipeline_adapters::driven::llm::claude_adapter::ClaudeCliAdapter;
-use file_pipeline_adapters::driven::notification::composite::{
+use file_pipeline_adapters::driven::notify::composite::{
     CompositeNotificationAdapter, NullNotificationAdapter,
 };
-use file_pipeline_adapters::driven::notification::slack_notify::SlackNotificationAdapter;
-use file_pipeline_adapters::driven::notification::telegram_notify::TelegramNotificationAdapter;
+use file_pipeline_adapters::driven::notify::slack_notify::SlackNotificationAdapter;
+use file_pipeline_adapters::driven::notify::telegram_notify::TelegramNotificationAdapter;
 use file_pipeline_adapters::driven::storage::zstd_storage::ZstdStorageAdapter;
 use file_pipeline_adapters::driven::vector_db::local_store::LocalVectorStore;
-use file_pipeline_adapters::driven::verification::claude_verifier::ClaudeVerificationAdapter;
+use file_pipeline_adapters::driven::verify::claude_verifier::ClaudeVerificationAdapter;
 use file_pipeline_adapters::stub::{
     StubDuplicateResolution, StubEmbedder, StubLlm, StubSensitiveNotification,
 };
@@ -696,7 +694,6 @@ pub fn auto_init() {
         eprintln!("    pipeline.exe              GUI 모드 (Dashboard)");
         eprintln!("    pipeline.exe stats        문서 통계");
         eprintln!("    pipeline.exe memo \"텍스트\" 메모 생성");
-        eprintln!("    pipeline.exe serve        MCP 서버 (Claude Code 연동)");
         eprintln!("    pipeline.exe --help       전체 도움말");
         eprintln!("========================================");
     }

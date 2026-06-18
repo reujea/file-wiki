@@ -8,62 +8,24 @@
 //!
 //! metrics는 stats/lint MCP 도구가 이미 노출하는 지표를 그대로 사용한다
 //! (외부 전문가 답변 §4.1). 별도 노드를 추가하지 않고 측정 시점에 fetch.
+//!
+//! 헥사고날 분리 (prep-3c): 순수 데이터 타입 + 순수 함수는
+//! `file_pipeline_core::domain::config_models`로 이전됨. 본 모듈은 아래 re-export로
+//! 기존 `crate::config_snapshot::X` 호출처를 그대로 흡수하며, 인프라 의존 로직
+//! (create_snapshot/rollback_snapshot — SetupProfile + fs + PipelineConfigExt)만 잔류한다.
 
 use anyhow::{Context, Result};
-use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 use crate::config::PipelineConfig;
+use crate::config::PipelineConfigExt;
 use crate::setup_review::SetupProfile;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ConfigSnapshot {
-    /// 16자 hex (millis 기반)
-    pub id: String,
-    /// RFC3339
-    pub created_at: String,
-    /// pipeline.toml SHA256 (16 hex)
-    pub config_hash: String,
-    /// pipeline.toml 원본 (적용 전)
-    pub config_backup: String,
-    /// 적용 시 사용한 SetupProfile JSON (없으면 None)
-    pub profile_json: Option<String>,
-    /// 적용된 path 목록
-    pub applied_paths: Vec<String>,
-    /// 측정된 metrics JSON (NULL이면 미측정)
-    pub metrics_json: Option<String>,
-    pub rolled_back: bool,
-    pub rollback_reason: Option<String>,
-}
-
-impl ConfigSnapshot {
-    pub fn applied_paths_json(&self) -> String {
-        serde_json::to_string(&self.applied_paths).unwrap_or_else(|_| "[]".into())
-    }
-
-    pub fn metrics(&self) -> Option<SnapshotMetrics> {
-        self.metrics_json.as_ref().and_then(|s| serde_json::from_str(s).ok())
-    }
-}
-
-/// 측정 지표 — stats + lint + verify에서 fetch
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct SnapshotMetrics {
-    /// 측정 시점 RFC3339
-    pub measured_at: String,
-    /// 측정 시점까지 처리된 문서 수
-    pub files_processed: usize,
-    /// verify 1-Pass 성공률 (0.0~1.0)
-    pub verify_pass_rate: f32,
-    /// quarantine 비율 (0.0~1.0)
-    pub quarantine_rate: f32,
-    /// 평균 처리 시간 (ms, 토큰 사용량 대신 stats.avg_process_ms)
-    pub avg_process_time_ms: u64,
-    /// lint 경고 수
-    pub lint_warnings: usize,
-    /// 평균 crossref 링크 수 (문서당)
-    pub avg_crossref_per_doc: f32,
-}
+// ── core로 이전된 순수 타입 re-export ────────────────────────────────
+// 기존 `crate::config_snapshot::ConfigSnapshot` 등 호출처가 변경 없이 작동하도록.
+pub use file_pipeline_core::domain::config_models::{
+    evaluate_rollback, ConfigSnapshot, RollbackEvaluation, RollbackThresholds, SnapshotMetrics,
+};
 
 /// snapshot 생성
 pub fn create_snapshot(
@@ -123,72 +85,6 @@ pub fn rollback_snapshot(
     Ok(())
 }
 
-/// 자동 롤백 조건 (외부 전문가 답변 §4.3)
-#[derive(Debug, Clone, Copy)]
-pub struct RollbackThresholds {
-    /// verify_pass_rate가 이전 대비 N%p 이상 떨어지면 트리거
-    pub verify_pass_drop_pp: f32,
-    /// quarantine_rate가 이 값 초과면 트리거
-    pub quarantine_rate_max: f32,
-    /// avg_process_time_ms가 이전 대비 N배 이상이면 트리거
-    pub process_time_factor_max: f32,
-}
-
-impl Default for RollbackThresholds {
-    fn default() -> Self {
-        Self {
-            verify_pass_drop_pp: 0.15,
-            quarantine_rate_max: 0.10,
-            process_time_factor_max: 2.0,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct RollbackEvaluation {
-    pub should_rollback: bool,
-    pub triggers: Vec<String>,
-}
-
-/// before와 after 메트릭을 비교해 롤백 권고 여부 산출
-pub fn evaluate_rollback(
-    before: &SnapshotMetrics,
-    after: &SnapshotMetrics,
-    thresholds: &RollbackThresholds,
-) -> RollbackEvaluation {
-    let mut triggers = Vec::new();
-
-    let verify_drop = before.verify_pass_rate - after.verify_pass_rate;
-    if verify_drop >= thresholds.verify_pass_drop_pp {
-        triggers.push(format!(
-            "verify_pass_rate {:.1}%p 하락 (임계 {:.1}%p)",
-            verify_drop * 100.0,
-            thresholds.verify_pass_drop_pp * 100.0,
-        ));
-    }
-    if after.quarantine_rate > thresholds.quarantine_rate_max {
-        triggers.push(format!(
-            "quarantine_rate {:.1}% (임계 {:.1}%)",
-            after.quarantine_rate * 100.0,
-            thresholds.quarantine_rate_max * 100.0,
-        ));
-    }
-    if before.avg_process_time_ms > 0 {
-        let factor = after.avg_process_time_ms as f32 / before.avg_process_time_ms as f32;
-        if factor >= thresholds.process_time_factor_max {
-            triggers.push(format!(
-                "avg_process_time_ms {:.1}배 증가 (임계 {:.1}배)",
-                factor, thresholds.process_time_factor_max,
-            ));
-        }
-    }
-
-    RollbackEvaluation {
-        should_rollback: !triggers.is_empty(),
-        triggers,
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -223,49 +119,5 @@ mod tests {
         let restored = std::fs::read_to_string(tmp.path()).expect("read");
         assert!(!restored.contains("999_modified"), "원본으로 복원");
         assert_eq!(restored, original, "snapshot의 backup과 정확히 일치");
-    }
-
-    #[test]
-    fn test_evaluate_rollback_triggers_on_quarantine() {
-        let before = SnapshotMetrics { verify_pass_rate: 0.95, quarantine_rate: 0.02, avg_process_time_ms: 100, ..Default::default() };
-        let after = SnapshotMetrics { verify_pass_rate: 0.94, quarantine_rate: 0.15, avg_process_time_ms: 110, ..Default::default() };
-        let ev = evaluate_rollback(&before, &after, &RollbackThresholds::default());
-        assert!(ev.should_rollback);
-        assert!(ev.triggers.iter().any(|t| t.contains("quarantine_rate")));
-    }
-
-    #[test]
-    fn test_evaluate_rollback_triggers_on_verify_drop() {
-        let before = SnapshotMetrics { verify_pass_rate: 0.95, quarantine_rate: 0.02, avg_process_time_ms: 100, ..Default::default() };
-        let after = SnapshotMetrics { verify_pass_rate: 0.70, quarantine_rate: 0.05, avg_process_time_ms: 110, ..Default::default() };
-        let ev = evaluate_rollback(&before, &after, &RollbackThresholds::default());
-        assert!(ev.should_rollback);
-        assert!(ev.triggers.iter().any(|t| t.contains("verify_pass_rate")));
-    }
-
-    #[test]
-    fn test_evaluate_rollback_no_trigger() {
-        let before = SnapshotMetrics { verify_pass_rate: 0.95, quarantine_rate: 0.02, avg_process_time_ms: 100, ..Default::default() };
-        let after = SnapshotMetrics { verify_pass_rate: 0.94, quarantine_rate: 0.03, avg_process_time_ms: 110, ..Default::default() };
-        let ev = evaluate_rollback(&before, &after, &RollbackThresholds::default());
-        assert!(!ev.should_rollback);
-        assert!(ev.triggers.is_empty());
-    }
-
-    #[test]
-    fn test_metrics_serde_roundtrip() {
-        let m = SnapshotMetrics {
-            measured_at: "2026-05-07T10:00:00Z".into(),
-            files_processed: 50,
-            verify_pass_rate: 0.92,
-            quarantine_rate: 0.03,
-            avg_process_time_ms: 250,
-            lint_warnings: 4,
-            avg_crossref_per_doc: 2.5,
-        };
-        let s = serde_json::to_string(&m).unwrap();
-        let r: SnapshotMetrics = serde_json::from_str(&s).unwrap();
-        assert_eq!(r.files_processed, 50);
-        assert_eq!(r.lint_warnings, 4);
     }
 }

@@ -182,20 +182,24 @@ PIPELINE_BASE/
 | Plugin trait 구현 | `SearchPlugin { id() = PLUGIN_ID }` placeholder |
 | 본진입 시점 이관 대상 | LocalVectorStore + MMR + vec_io 본체 + 4 MCP 도구 handle_* |
 
-### Phase 207 어댑터 → plugin 매핑 (예정)
+### Phase 207 어댑터 → plugin 매핑 (예정, 2026-06-16 outbound 우산 재정의)
 
-상위 단일 진실원: `prd/research/plugin-architecture-2026-06-04.md` §3-C. 본 §는 현재 path 의존 어댑터 23종 + verify 분리 1종 = 24 plugin 변환 대상.
+상위 단일 진실원: `prd/research/plugin-architecture-2026-06-04.md` §3-C (2026-06-16 outbound 우산 본문 재정의). 본 §는 현재 path 의존 어댑터 24종 + verify 분리 1종 = **25 outbound 변환 대상**. plugin id prefix = `fp-plugin-` → `fp-outbound-` 정합 (lesson 77).
 
-| 카테고리 | 현재 path 의존 (file-pipeline/src/crates/adapters/) | Phase 207 plugin |
-|---------|----------------------------------------------|------------------|
-| embedding | 6 (claude / openai / local / fastembed / fastembed-sparse / python-onnx) | `fp-plugin-embedding-*` |
-| llm | 7 | `fp-plugin-llm-*` |
-| storage | 5 (s3 / webdav / network / notion / zstd) | `fp-plugin-storage-*` |
-| notification | 2 (telegram / slack) | `fp-plugin-notify-*` |
-| reranking | 3 (claude / fastembed / null) | `fp-plugin-rerank-*` |
-| verification | 1 (claude — 분리 예정) | `fp-plugin-verify-claude` |
+| 카테고리 | 현재 path 의존 (file-pipeline/src/crates/adapters/driven/) | 어댑터 수 | Phase 207 outbound id |
+|---------|---------------------------------------------------|-----------|----------------------|
+| embedding | embedding/ (claude / openai / local / fastembed / fastembed-sparse / python-onnx) | 6 | `fp-outbound-embedding-*` |
+| llm | llm/ | 7 | `fp-outbound-llm-*` |
+| storage | storage/ (s3 / webdav / network / notion / telegram / zstd) | 6 | `fp-outbound-storage-*` |
+| notify | notify/ (telegram / slack) — **2026-06-16 notification → notify 디렉토리 정정** | 2 | `fp-outbound-notify-*` |
+| rerank | rerank/ (claude / fastembed / null) — **2026-06-16 reranking → rerank 디렉토리 정정** | 3 | `fp-outbound-rerank-*` |
+| verify | verify/ (claude) — **2026-06-16 verification → verify 디렉토리 정정** | 1 | `fp-outbound-verify-claude` |
 
-전환 단위: **한 모듈 = 한 plugin** (binary plugin 4축 합의). 형제 모듈에 `[[bin]] name = "fp-plugin-*"` 추가 + main.rs (`fp_plugin_sdk::run::<P>()`) 작성.
+**telegram = storage + notify 양쪽 어댑터** (`fp-outbound-storage-telegram` + `fp-outbound-notify-telegram`, CLAUDE.local.md bot 인프라 재사용). lesson 77 §개선 3 정합.
+
+**공통 우산 trait** (2026-06-16 신규): `core/ports/outbound/mod.rs` 안 `OutboundManifest` super-trait (id/category/capabilities/modes/config_keys). 6 port trait (RemoteStoragePort / EmbedderPort / LlmPort / NotifyPort / RerankerPort / VerifierPort) 모두 super-trait 박힘 의무 (현재 24 어댑터 manifest impl 완료, 6 port super-trait 박힘 = step-o2 partial 잔여 = 다음 cycle 의무).
+
+전환 단위: **한 모듈 = 한 plugin** (binary plugin 4축 합의). 형제 모듈에 `[[bin]] name = "fp-outbound-*"` 추가 + main.rs (`fp_plugin_sdk::run::<P>()`) 작성.
 
 ## 본질 재정의 1차 (2026-06-01, 무효화)
 
@@ -263,7 +267,7 @@ PIPELINE_BASE/
 | GeminiAdapter | llm/gemini_adapter.rs | Google Gemini |
 | FallbackLlmAdapter | llm/fallback_adapter.rs | 순차 시도 |
 | ChunkedAgentAdapter | llm/chunked_agent.rs | >40KB 분할 위임 |
-| ClaudeVerificationAdapter | verification/claude_verifier.rs | 환각 탐지 |
+| ClaudeVerificationAdapter | verify/claude_verifier.rs | 환각 탐지 (2026-06-16 verification → verify 디렉토리 정정) |
 | CompositePreprocessor | preprocessing/preprocessor.rs | PDF/OCR |
 
 ### 설정 ↔ UI 매핑
@@ -308,9 +312,9 @@ PIPELINE_BASE/
 | OpenAIEmbeddingAdapter | embedding/openai_embed.rs | text-embedding-3-small |
 | LocalEmbeddingAdapter | embedding/local_embed.rs | 키워드 해시 |
 | PythonOnnxAdapter | embedding/python_onnx_embed.rs | Python subprocess 폴백 (legacy. Rust ort는 트리거 #11에서 폐기) |
-| FastEmbedReranker | reranking/fastembed_reranker.rs | **BGE-Reranker-v2-M3 Cross-Encoder** (Phase 62, default) |
-| ClaudeReranker | reranking/claude_reranker.rs | Claude CLI 관련도 점수 (fallback) |
-| NullReranker | reranking/null_reranker.rs | 패스스루 |
+| FastEmbedReranker | rerank/fastembed_reranker.rs | **BGE-Reranker-v2-M3 Cross-Encoder** (Phase 62, default) (2026-06-16 reranking → rerank 디렉토리 정정) |
+| ClaudeReranker | rerank/claude_reranker.rs | Claude CLI 관련도 점수 (fallback) |
+| NullReranker | rerank/null_reranker.rs | 패스스루 |
 
 ### 설정 ↔ UI 매핑
 | 설정 | config.rs | UI 위치 | 상태 |
@@ -337,7 +341,7 @@ PIPELINE_BASE/
 | 포트 | 파일 | 메서드 |
 |------|------|--------|
 | StoragePort | ports/output.rs:62 | compress_and_store, decompress_temp, delete_expired, read_header |
-| RemoteStoragePort | ports/output.rs | upload, download, list, delete, is_configured, **capabilities (Phase 92 H5)** |
+| RemoteStoragePort | ports/output.rs | upload, download, list, delete, is_configured, **capabilities (Phase 92 H5)**. **2026-06-16 outbound 우산 재정의** = `core/ports/outbound/mod.rs::OutboundManifest` super-trait 박힘 의무 (현재 step-o2 partial 잔여 = 다음 cycle, lesson 77) |
 
 ### 어댑터
 | 어댑터 | 파일 | 설명 |
@@ -371,10 +375,10 @@ PIPELINE_BASE/
 ### 어댑터
 | 어댑터 | 파일 | 설명 |
 |--------|------|------|
-| TelegramNotificationAdapter | notification/telegram_notify.rs | Telegram Bot API |
-| SlackNotificationAdapter | notification/slack_notify.rs | Slack Web API |
-| CompositeNotificationAdapter | notification/composite.rs | 멀티채널 |
-| NullNotificationAdapter | notification/composite.rs | 비활성 |
+| TelegramNotificationAdapter | notify/telegram_notify.rs | Telegram Bot API (2026-06-16 notification → notify 디렉토리 정정. **outbound 우산 재정의 직후 storage 양쪽 어댑터 신설 후보** = `notify/telegram_notify.rs` + `storage/telegram_storage.rs`, lesson 77) |
+| SlackNotificationAdapter | notify/slack_notify.rs | Slack Web API |
+| CompositeNotificationAdapter | notify/composite.rs | 멀티채널 |
+| NullNotificationAdapter | notify/composite.rs | 비활성 |
 | **NullAuditAdapter (Phase 94 신규)** | **core ports/output.rs** | **디폴트 no-op (lesson 14 회피)** |
 | **SettingsAuditAdapter (Phase 94 신규)** | **shared/settings_audit_adapter.rs** | **settings.db audit_trace 기록. 실패 silent** |
 

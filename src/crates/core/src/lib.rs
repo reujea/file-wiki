@@ -4,3 +4,4 @@ pub mod plugin;
 pub mod ports;
 pub mod reasoning;
 pub mod service;
+pub mod use_cases;

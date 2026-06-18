@@ -27,7 +27,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use file_pipeline_adapters::driven::notification::composite::NullNotificationAdapter;
+use file_pipeline_adapters::driven::notify::composite::NullNotificationAdapter;
 use file_pipeline_adapters::driven::storage::remote_null::NullRemoteStorage;
 use file_pipeline_adapters::driven::storage::zstd_storage::ZstdStorageAdapter;
 use file_pipeline_adapters::driven::vector_db::local_store::LocalVectorStore;

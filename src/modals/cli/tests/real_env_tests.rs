@@ -64,7 +64,7 @@ fn preprocessing_image_fallback_no_tool() {
 
 #[tokio::test]
 async fn notification_null_adapter_no_panic() {
-    use file_pipeline_adapters::driven::notification::composite::NullNotificationAdapter;
+    use file_pipeline_adapters::driven::notify::composite::NullNotificationAdapter;
     use file_pipeline_core::domain::models::{DbStats, ProcessingSummary};
     use file_pipeline_core::ports::output::NotificationPort;
 
@@ -314,3 +314,14 @@ async fn real_openai_embedding() {
 }
 
 // Qdrant 테스트 제거됨 (Phase 44에서 Qdrant 완전 삭제)
+
+// step-o2 partial 해소 (2026-06-17): integration test mock OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for TwoPassLlm {
+    fn id(&self) -> &str { "fp-outbound-llm-two-pass" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Llm
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("two-pass")
+    }
+}

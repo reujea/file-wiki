@@ -63,3 +63,20 @@ impl NotificationPort for TelegramNotificationAdapter {
         self.inner.send_text(&format_summary_telegram(s)).await.map_err(map_err)
     }
 }
+
+// step-o3 (2026-06-17, outbound-umbrella-1): OutboundManifest + mode_options (alert/event) 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for TelegramNotificationAdapter {
+    fn id(&self) -> &str { "fp-outbound-notify-telegram" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Notify
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        let mut caps = file_pipeline_core::ports::output::ResourceCapabilities::standard("telegram");
+        caps.mode_options = &["alert", "event"];
+        caps.active_mode = "alert".into();
+        caps
+    }
+    fn modes(&self) -> &[&str] {
+        &["alert", "event"]
+    }
+}

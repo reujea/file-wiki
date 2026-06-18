@@ -14,6 +14,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 use crate::config::PipelineConfig;
+use crate::config::PipelineConfigExt;
 
 // ── 1. 5축 프로파일 ──────────────────────────────────────────
 

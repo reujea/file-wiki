@@ -3,6 +3,7 @@ pub mod auto_reindexer;
 pub mod chunking;
 pub mod chunking_quality;
 pub mod classifier;
+pub mod config_models;
 pub mod cross_reference;
 pub mod crossref_optimizer;
 pub mod deduplicator;
@@ -14,6 +15,8 @@ pub mod lint;
 pub mod mmr;
 pub mod models;
 pub mod purge;
+pub mod search_engine;
+pub mod settings_models;
 #[cfg(test)]
 mod tests;
 // todo_lifecycle 제거됨 — 신규 todo 시스템으로 대체 (Phase 53)

@@ -157,3 +157,14 @@ mod tests {
         assert_eq!(desc, "Line 1\nLine 2\nLine 3");
     }
 }
+
+// step-o2 (2026-06-16, outbound-umbrella-1): OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for ClaudeVerificationAdapter {
+    fn id(&self) -> &str { "fp-outbound-verify-claude" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Verify
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("claude")
+    }
+}

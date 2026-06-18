@@ -11,6 +11,8 @@ use std::path::Path;
 use anyhow::{Context, Result};
 use chrono::Utc;
 
+use crate::config::PipelineConfigExt;
+
 use crate::settings_db::{DecisionLogEntry, SettingsDb};
 
 /// 누적 카운터 기반 자동 추천 생성

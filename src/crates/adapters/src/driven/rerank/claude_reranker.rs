@@ -143,7 +143,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_null_reranker_passthrough() {
-        use crate::driven::reranking::null_reranker::NullReranker;
+        use crate::driven::rerank::null_reranker::NullReranker;
         let reranker = NullReranker;
         assert!(!reranker.is_enabled());
         let docs = vec![
@@ -153,5 +153,16 @@ mod tests {
         let result = reranker.rerank("test query", docs.clone()).await.expect("rerank 실패");
         assert_eq!(result.len(), 2);
         assert_eq!(result[0].id, "a");
+    }
+}
+
+// step-o2 (2026-06-16, outbound-umbrella-1): OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for ClaudeReranker {
+    fn id(&self) -> &str { "fp-outbound-rerank-claude" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Rerank
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("claude")
     }
 }

@@ -553,3 +553,25 @@ async fn bench_threshold_comparison() {
     save_snapshot(&r70, "threshold_070");
     save_snapshot(&r80, "threshold_080");
 }
+
+// step-o2 partial 해소 추가 (2026-06-17)
+impl file_pipeline_core::ports::outbound::OutboundManifest for FastLlm {
+    fn id(&self) -> &str { "fp-outbound-llm-fast" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Llm
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("fast")
+    }
+}
+
+// step-o2 partial 해소 추가 (2026-06-17)
+impl file_pipeline_core::ports::outbound::OutboundManifest for HashEmbedder {
+    fn id(&self) -> &str { "fp-outbound-embedding-hash" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("hash")
+    }
+}

@@ -81,3 +81,14 @@ impl EmbeddingPort for FastEmbedAdapter {
         .context("spawn_blocking 합류 실패")?
     }
 }
+
+// step-o2 (2026-06-16, outbound-umbrella-1): OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for FastEmbedAdapter {
+    fn id(&self) -> &str { "fp-outbound-embedding-fastembed" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("fastembed")
+    }
+}

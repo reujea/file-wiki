@@ -21,7 +21,7 @@ tracing            = { workspace = true }
 async-trait        = { workspace = true }
 notify             = { workspace = true }
 chrono             = { workspace = true }
-reqwest            = { workspace = true }
+reqwest            = { workspace = true, features = ["json", "multipart"] }
 similar            = { workspace = true }
 regex              = { workspace = true }
 # qdrant-client 제거
@@ -39,6 +39,16 @@ zip                = { workspace = true }
 tempfile           = "3"
 chardetng          = "0.1"
 encoding_rs        = "0.8"
+# step-o3 (2026-06-17, outbound-umbrella-1): telegram_storage 의 telegram_message_map 직접 접근
+rusqlite           = { workspace = true }
+# hex-arch-d prep-3 (2026-06-17, settings-db-split-1): SettingsDb 본체 이전 동반 (todo 추출/프롬프트 toml)
+sha2               = { workspace = true }
+hex                = { workspace = true }
+toml               = { workspace = true }
+
+# hex-arch-d step-s5 (2026-06-17): tray.rs → adapters/driving/tray.rs 이전 동반 (shared → adapters)
+[target.'cfg(windows)'.dependencies]
+tray-icon          = "0.19"
 
 [features]
 fastembed = ["dep:fastembed", "dep:zstd"]

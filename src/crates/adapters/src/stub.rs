@@ -262,3 +262,24 @@ mod tests {
 
     use std::path::PathBuf;
 }
+
+// step-o2 partial 해소 (2026-06-17, outbound-umbrella-1): stub OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for StubLlm {
+    fn id(&self) -> &str { "fp-outbound-llm-stub" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Llm
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("stub")
+    }
+}
+
+impl file_pipeline_core::ports::outbound::OutboundManifest for StubEmbedder {
+    fn id(&self) -> &str { "fp-outbound-embedding-stub" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("stub")
+    }
+}

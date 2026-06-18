@@ -9,12 +9,12 @@ status_note: 본문 § "탭 구성 (7개)" ~ § "Settings 5그룹"은 Phase 107(
 
 ## 프로젝트 개요
 
-로컬 파일을 자동 분류·가공·압축·색인하여 Claude Code(MCP)로 검색 가능하게 만드는 Windows 데스크톱 파이프라인.
+로컬 파일을 자동 분류·가공·압축·색인하여 검색 가능하게 만드는 Windows 데스크톱 파이프라인. (외부 연계는 본질 재정의 3차로 plugin transport 이관 — MCP 폐기)
 
 - **단일 사용자 데스크톱** 도메인 (lesson 50 RBAC 보류 / 메타 룰 20 자기 적용)
 - Tauri 2.0 WebView GUI, 단일 바이너리 **22.09 MB** (Phase 106 release)
 - Rust 백엔드 + 단일 JS 프론트엔드 (`ui/dashboard.js`)
-- MCP 서버 **36 도구** (실측, 2026-06-01 정밀 분류 — 검색 8 / 추천 13 / 카운터 4 / C1 임계값 2 / C2 PII 3 / A1 캐시 2 / Todo 2 / optimize 1 / lint 1) + Tauri commands 65개 + 11 도메인 포트. **Phase 108~115 분리 시 외부 8 / 잔류 28 분할** (`prd/research/search-extraction-plan.md` §1.3)
+- ~~MCP 서버~~ **MCP 폐기** (본질 재정의 3차, 2026-06-17 — mcp_server.rs 2139줄 + 37 도구 + Tauri command 삭제. 외부 연계는 plugin transport 채널로 이관) + Tauri commands 64개 + 11 도메인 포트
 - **UI 라벨 정책** (Phase 101 메타 룰 28 정식): 내부 코드명(C1/A1/G1 등) + Phase 번호 노출 금지. JS 함수명·HTML id는 추적성 보존
 - **온보딩** (Phase 106): 헤더 🧭 온보드 버튼 → 4-step 모달 무상태 흐름. 별도 DB 없음 — 사용자 명시 클릭 트리거
 
@@ -37,7 +37,7 @@ status_note: 본문 § "탭 구성 (7개)" ~ § "Settings 5그룹"은 Phase 107(
 | 버튼 | data-action | 흐름 |
 |------|-----------|------|
 | 🧭 **온보드** (Phase 106 신규) | `open-onboarding` | 4-step 모달 (환영/크레덴셜+기본 설정/inbox/optimize). 무상태 (DB 미사용) — 사용자 클릭 시마다 1부터 |
-| 🤖 **AI 설정 도우미** (Phase 75) | `open-setup-assistant` | Claude Code MCP 안내 모달 |
+| 🤖 **AI 설정 도우미** (Phase 75) | `open-setup-assistant` | 설정 안내 모달 (MCP 안내 폐기 — 본질 재정의 3차) |
 
 ### 온보딩 4-step 흐름
 
@@ -65,7 +65,7 @@ status_note: 본문 § "탭 구성 (7개)" ~ § "Settings 5그룹"은 Phase 107(
 | **Verification** | pass/fail/warning 카드 + 메트릭 테이블 + **강한 주장** + **자동 이상 감지** (Phase 93 H1) | 메모리 + audit_anomaly | 탭 진입 |
 | **Topics** | 토픽 카드 + 검색/정렬 + 모달 편집 | 파일시스템 .md | 탭 진입 + 새로고침 |
 | **Pipeline** | 2컬럼: 사이드바(시뮬레이션+로그) + 메인(4서브탭 + 인스펙터) | config + decision_log | 탭 진입 |
-| **Settings** | 5그룹 네비 + 카드 7+종 (MCP 카탈로그 / PII / Decision Log / 자기학습 / 운영 카드 등) | config + settings.db | 탭 진입 |
+| **Settings** | 5그룹 네비 + 카드 6+종 (PII / Decision Log / 자기학습 / 운영 카드 등 — MCP 카탈로그 카드 폐기) | config + settings.db | 탭 진입 |
 
 ## Pipeline 탭 구조 (Phase 66~67 인스펙터 정착)
 
@@ -99,13 +99,13 @@ status_note: 본문 § "탭 구성 (7개)" ~ § "Settings 5그룹"은 Phase 107(
 ```
 크레덴셜 관리    — 카드 UI (프로바이더별 아이콘 + CRUD + 기본 설정)
 일반             — 로깅
-운영             — 자동 추천 · 임계값 · PII 패턴 · 출력 PII 마스킹 · MCP 도구 분류 (5 카드)
+운영             — 자동 추천 · 임계값 · PII 패턴 · 출력 PII 마스킹 (4 카드 — MCP 도구 분류 카드 폐기, 본질 재정의 3차)
                    ※ Phase 100 신규 그룹. settings-ops-cards 단일 진실원 컨테이너 + DOM mount 패턴 (메타 룰 19)
 이벤트 훅        — HookDefinition CRUD (5 이벤트: file_detected / process_start / process_complete / verify_fail / search_query)
 마이그레이션     — 임베딩 재생성 / 벡터DB 재구축 / 전체 재가공
 ```
 
-### Settings 운영 그룹 5 카드 (Phase 84~93 누적, Phase 100 좌측 그룹 이관)
+### Settings 운영 그룹 4 카드 (Phase 84~93 누적, Phase 100 좌측 그룹 이관 — 🧰 MCP 도구 분류 카드 폐기 2026-06-17)
 
 > **UI 라벨 정책** (Phase 101 메타 룰 28 정식): 카드 제목에서 내부 코드명 (C1)/(C2)/(A1)/(H1)/(Phase 92 H1) 제거.
 
@@ -114,8 +114,7 @@ status_note: 본문 § "탭 구성 (7개)" ~ § "Settings 5그룹"은 Phase 107(
 | 🧠 자동 추천 | Ruflo C1 | 82 / 33 / 100 | 카운터 기반 자동 추천 + 4시간 주기 + Decision Log 필터/정렬 |
 | ⚙️ 자동 추천 임계값 | C1 thresholds | 34 | 발화 조건 7 임계값 사용자 가변 (settings.db.c1_rule_thresholds) |
 | 🔒 PII 검출 패턴 | Ruflo C2 | 34 / 84 | regex 추가/제거 + live reload (재시작 불필요) |
-| 🛡 출력 PII 마스킹 | A2 | 91 / 93 | 검색 결과·MCP 응답 PII 토글 (디폴트 ON) |
-| 🧰 MCP 도구 분류 | Mirage H3 | 92 / 93 | 25 도구 카테고리/mutates/cost (Phase 102 optimize 포함) |
+| 🛡 출력 PII 마스킹 | A2 | 91 / 93 | 검색 결과 PII 토글 (디폴트 ON) |
 
 ## 헤더 카드 그룹 (15개)
 
@@ -155,9 +154,7 @@ status_note: 본문 § "탭 구성 (7개)" ~ § "Settings 5그룹"은 Phase 107(
 │             │     │             │     │ audit_trace │
 └─────────────┘     └─────────────┘     └─────────────┘
 
-       │                                       │
-       └────────────── HTTP fetch ────────────►│  (mcp_server, 24 도구)
-                                               │  Claude Code MCP 클라이언트
+(MCP 외부 연계 다이어그램 폐기 — 본질 재정의 3차로 plugin transport 채널 이관)
 ```
 
 ## 메타 룰 13 4단계 UI 노출 영역 (사용자 가시화 완성)
@@ -167,7 +164,6 @@ status_note: 본문 § "탭 구성 (7개)" ~ § "Settings 5그룹"은 Phase 107(
 | A1 LLM 캐시 (Ruflo) | 4단계 ✅ | 헤더 5카드 + Settings 카드 |
 | C1 자기학습 | 4단계 ✅ | Settings Decision Log + 임계값 |
 | C2 PII | 4단계 ✅ | Settings 사용자 패턴 카드 |
-| MCP 카탈로그 (H3) | 4단계 ✅ | Settings MCP 도구 분류 |
 | A2 PII mask | 4단계 ✅ | Settings 출력 PII 마스킹 토글 |
 | H1 audit_anomaly | 4단계 ✅ | Verification 자동 이상 감지 카드 |
 | H5 Notion capability | 4단계 ✅ | Pipeline remote_upload 인스펙터 |

@@ -379,3 +379,25 @@ async fn bench_real_corpus_variants() {
         assert!(*r <= base_rels, "변형은 baseline보다 많은 관계를 만들 수 없음");
     }
 }
+
+// step-o2 partial 해소 (2026-06-17): integration test mock OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for RealCorpusLlm {
+    fn id(&self) -> &str { "fp-outbound-llm-real-corpus" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Llm
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("real-corpus")
+    }
+}
+
+// step-o2 partial 해소 추가 (2026-06-17)
+impl file_pipeline_core::ports::outbound::OutboundManifest for HashEmbedder {
+    fn id(&self) -> &str { "fp-outbound-embedding-hash" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("hash")
+    }
+}

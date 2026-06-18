@@ -22,13 +22,23 @@ updated: 2026-06-05 (§2-A 사용자 합의 4축 재정의 + lesson 75 등재)
 
 ## 0. 본 문서 위상
 
-본 문서는 **file-pipeline 본질 재정의의 단일 진실원**. 2026-06-04 사용자 합의로 다음 결정 확정:
+본 문서는 **file-pipeline 본질 재정의의 단일 진실원**. 2026-06-04 사용자 합의로 다음 결정 확정 (2026-06-16 outbound 우산 추상화 2차 / 2026-06-17 본질 재정의 3차 누적):
 
 1. **host = 파일 가공만 (최소)** — watcher + Preprocess + Chunk + Metadata 구조화 + DB 영속 + audit 코어
 2. **그 외 모두 plugin** — LLM / 임베딩 / 검증 / 분류 / 검색 / KG / 추천 / 알림 / 첨부 / 링크
 3. **tasty 패턴 직접 흡수** — workspace + 별도 프로세스 plugin + IPC + 매니페스트 + permission gate
 4. **search-extraction-plan.md (Phase 108 검색 분리) 폐기** — 본 결정이 상위, deprecated.md 단방향 위임
 5. **본 세션 = 문서만**. Phase 200 시리즈 진입은 별도 세션
+
+### 0-A. 본질 재정의 3차 (2026-06-17 사용자 합의, lesson 79 후보)
+
+직전 cycle 4 진행 중 사용자 발화 = 본질 재정의 3차:
+
+1. **MCP 완전 폐기** — `shared/mcp_server.rs` (25 도구) + Tauri commands MCP 연계 전부 삭제. 외부 접근 부재. 28 MCP 도구 표면 차단. 메타 룰 22 21건째
+2. **외부 plugin이 가공 파이프라인 스텝에 연결** — 신규 §3-D 인터페이스 spec (전/후 hook + HookPoint trait + IPC 입찰). step 전후에 plugin broadcast_event + 동기 수신 대기
+3. **Output adapter = raw I/O 만** — outbound 어댑터 = raw 전송/수신 transport only (telegram bot.sendMessage 호출 only). 변환/검증/capabilities/mode = plugin 책임. OutboundManifest super-trait 폐기. plugin 측에서 어댑터 호출 후 모든 도메인 로직 처리
+
+본 재정의 = lesson 77 outbound 우산 추상화 (메타 룰 22 19/20건째) 의 후속 결정 — 어댑터 단순화 + plugin 단위 책임 확장 + 본 host 표면 차단 강화.
 
 본 결정으로 무효화·재정의되는 사항은 `spec/deprecated.md` 단방향 위임. 본 문서가 진실원.
 
@@ -183,7 +193,7 @@ component = "search-box"
 | **DB 영속** | LocalVectorStore 본체는 plugin이지만 **DocStore + settings.db는 host** | plugin은 읽기, 쓰기는 host 주도 |
 | **audit 코어** | `core/audit.rs` + `core::AuditPort` | host가 모든 plugin IPC 호출 기록 |
 | **Plugin discovery + registry + permission gate** | 신규 `core/plugin/` | tasty 패턴 직접 흡수 |
-| **MCP server + Tauri 진입점** | `shared/mcp_server.rs` + `modals/app/` | 외부 인터페이스 — plugin은 contribute |
+| **~~MCP server~~ + Tauri 진입점** | ~~`shared/mcp_server.rs`~~ (2026-06-17 본질 재정의 3차 = 완전 폐기) + `modals/app/` | **MCP 완전 폐기** (lesson 79 후보, 메타 룰 22 21건째). Tauri commands 만 host 외부 인터페이스. plugin contribute = §3-D step hook 으로 일원화 |
 | **`pipeline.toml` + `prompts.toml`** | `shared/config.rs` | 본문은 host, plugin은 자기 섹션 contribute |
 
 ### 3-B. host에서 plugin으로 이관
@@ -205,19 +215,228 @@ component = "search-box"
 | `core/domain/auto_reindexer.rs` | **fp-plugin-reindex** |
 | `core/audit.rs` (AuditPort impl) | core impl은 host, 분석/anomaly는 **fp-plugin-audit-analyzer** |
 
-### 3-C. 어댑터 → plugin 변환 (현재 23종)
+### 3-C. 어댑터 → raw I/O transport (2026-06-17 본질 재정의 3차, lesson 79 후보)
 
-| 카테고리 | 어댑터 수 | plugin |
-|----------|----------|--------|
-| **embedding** | 6 | `fp-plugin-embedding-{claude,openai,local,fastembed,fastembed-sparse,python-onnx}` |
-| **llm** | 7 | `fp-plugin-llm-{claude,anthropic,openai,gemini,ollama,fallback,chunked-agent}` |
-| **storage** | 5 | `fp-plugin-storage-{s3,webdav,network,notion,zstd}` |
-| **notification** | 2 | `fp-plugin-notify-{telegram,slack}` |
-| **reranking** | 3 | `fp-plugin-rerank-{claude,fastembed,null}` |
-| **verification** | 1 | `fp-plugin-verify-claude` |
-| **합계 plugin (어댑터만)** | **24** | (현재 어댑터 23 + verify-claude 분리) |
+#### 본질 재정의 3차 — Output adapter = raw I/O 만 (사용자 합의 2026-06-17)
 
-## 4. plugin 분류 — 28 MCP 도구 매핑
+사용자 발화 = `"Output adaptor들은 외부 데이터를 전달만 하고, plugin이 받아서 처리하게 하자"`.
+
+직전 2026-06-16 outbound 우산 추상화 (옵션 C, OutboundManifest super-trait + capabilities/modes 명세) = **폐기**. 본 3차 재정의:
+
+- **어댑터 = raw transport only** — telegram bot.sendMessage / s3 PutObject / openai chat.completions HTTP 호출 only. 도메인 로직 0
+- **변환 / 검증 / capabilities / mode / 제약 = plugin 책임** — fp-plugin-storage-telegram 이 mode 분기 + sqlite mapping + 48h 검증 + 50MB pre-check 등 모든 도메인 로직 보유
+- **OutboundManifest super-trait 폐기** — capabilities = plugin manifest (`fp-plugin.toml`) 박힘. 어댑터는 `RawTransport` trait 만 impl
+- **헥사고날 정합** = `core/ports/raw_transport/{http,websocket,sqlite,fs,...}.rs` (전송 채널별 분류) + `adapters/driven/transport/{telegram_http,s3_http,...}.rs` (외부 SDK 호출 wrap)
+- **신규 외부 연계 추가** = 외부 SDK transport wrap (수십 줄) + plugin 본문 신설 (도메인 로직 plugin 책임). 어댑터 자체는 SDK 호출 forward only
+
+본 재정의의 가치 = **어댑터 비대화 차단** + **plugin 단위 책임 확장** + **회귀 영역 plugin 단위로 분산** (어댑터 변경 = SDK API 변경만, 도메인 변경 = plugin 본문만). lesson 45 (Notion 특수성 직접 구현) 의 다음 진화 = 특수성을 어댑터에서 plugin으로 완전 이관.
+
+#### raw transport 표 (2026-06-17 본질 재정의 3차)
+
+기존 outbound 우산 6 port (RemoteStoragePort + EmbedderPort + LlmPort + NotifyPort + RerankerPort + VerifierPort) **모두 폐기**. plugin 단위 매핑:
+
+| transport 채널 | 어댑터 위치 | 호출하는 plugin |
+|---------------|----------|--------------|
+| **HTTP (reqwest)** | `adapters/driven/transport/http_client.rs` (raw GET/POST/PUT/DELETE) | fp-plugin-storage-{s3,webdav,notion,telegram} / fp-plugin-llm-{claude,openai,anthropic,gemini,ollama} / fp-plugin-embedding-{claude,openai,fastembed} / fp-plugin-rerank-{claude,fastembed} / fp-plugin-verify-claude / fp-plugin-notify-{telegram,slack} |
+| **filesystem** | `adapters/driven/transport/fs.rs` (raw read/write/exists) | fp-plugin-storage-network / fp-plugin-embedding-{local,python-onnx} / fp-plugin-storage-zstd |
+| **stdio (subprocess)** | `adapters/driven/transport/stdio.rs` (raw stdin/stdout/stderr) | fp-plugin-llm-claude (claude CLI) / fp-plugin-embedding-python-onnx / fp-plugin-llm-ollama |
+| **sqlite** | `adapters/driven/settings/sqlite.rs` (cycle 4 prep-unlock 종결, host 잔류) | host 본체 (config/audit/todo/decision_log/c1/c2/llm_cache) |
+
+기존 outbound id (`fp-outbound-storage-telegram` 등) 는 **deprecated.md 단방향 위임**. plugin id 는 `fp-plugin-{category}-{name}` 로 재정의 (2026-06-04 §3-B 매핑 정합 복원).
+
+#### plugin 책임 (도메인 로직)
+
+기존 어댑터에 박힌 모든 도메인 로직 = plugin 본문으로 이관:
+
+| 영역 | 기존 어댑터 위치 | 이관 후 plugin 위치 |
+|------|--------------|------------------|
+| telegram mode 분기 (document/text/channel) | `telegram_storage.rs::TelegramStorageAdapter` | `fp-plugin-storage-telegram::process_request` |
+| telegram_message_map sqlite 매핑 | `telegram_storage.rs` + `settings_db.rs::telegram_message_map` | `fp-plugin-storage-telegram` 자체 sqlite (plugin 단위) |
+| telegram 48h delete 검증 | `telegram_storage.rs::delete` | `fp-plugin-storage-telegram` 정책 본문 |
+| telegram 50MB upload pre-check | `telegram_storage.rs::upload` | `fp-plugin-storage-telegram` 검증 본문 |
+| Notion page/attach mode 분기 | `notion_storage.rs::NotionStorageAdapter` | `fp-plugin-storage-notion::process_request` |
+| Notion rate limit (3 req/s) | `notion_storage.rs` 호출 spacing | `fp-plugin-storage-notion` 정책 본문 (token bucket) |
+| openai/claude/anthropic LLM 요청 형식 | 각 `*_adapter.rs` | 각 plugin 본문 (prompt + temperature + max_tokens 등) |
+| LLM 응답 파싱 + 에러 처리 | 각 어댑터 | 각 plugin (LLM 응답 도메인 = plugin 책임) |
+| fastembed BGE-M3 batch / pooling | `fastembed_adapter.rs` | `fp-plugin-embedding-fastembed` 본문 |
+
+어댑터 잔류 책임 = **외부 SDK 호출 wrap** + **에러 forward**. 어댑터 자체에 LOC 100줄 이하 권장 (현재 telegram_storage.rs 291줄 → 이관 후 ~50줄 예상).
+
+#### capabilities 이관 — plugin manifest 박힘
+
+기존 `ResourceCapabilities` (Phase 92 H5) + `OutboundManifest::modes() / config_keys()` **모두 폐기**. plugin manifest (`fp-plugin.toml`) 에 박힘:
+
+```toml
+# fp-plugin-storage-telegram/fp-plugin.toml
+manifest_version = 1
+id = "fp-plugin-storage-telegram"
+name = "Telegram Storage"
+version = "0.1.0"
+api_version = "1"
+
+[capabilities]
+can_upload = true
+can_download = true
+can_list = false  # bot API 한계
+can_delete = true  # 48h 제약
+supports_hard_delete = false
+
+[modes]
+default = "document"
+options = ["document", "text", "channel"]
+
+[config_keys]
+required = ["bot_token", "chat_id"]
+optional = ["mode"]
+
+[constraints]
+upload_max_bytes = 52428800  # 50MB
+delete_window_hours = 48
+
+[contributes.step_hook]
+phase = "store"  # §3-D step hook 정합
+position = "post"
+```
+
+host = 매니페스트 파싱 후 `Plugin discovery` 단계 (§3-A #7) 에서 capabilities 카탈로그 생성. plugin 책임 = 매니페스트 선언 + 본문에서 capabilities 정합 강제.
+
+#### telegram 어댑터 + plugin 재배치 (2026-06-17 본질 재정의 3차 정합)
+
+기존 telegram 양쪽 어댑터 (`telegram_storage.rs` 291줄 + `telegram_notify.rs`) = **raw I/O transport 만 잔류**. 도메인 로직 = `fp-plugin-storage-telegram` + `fp-plugin-notify-telegram` 본문 이관:
+
+| 영역 | 어댑터 잔류 (raw I/O) | plugin 이관 (도메인 로직) |
+|------|-------------------|--------------------|
+| 어댑터 위치 | `adapters/driven/transport/telegram_http.rs` (Bot API HTTP wrap, ~50줄 예상) | `fp-plugin-storage-telegram` + `fp-plugin-notify-telegram` (별도 plugin) |
+| 책임 (어댑터) | `send_document(chat_id, file_path) -> Result<MessageId>` / `send_message(chat_id, text) -> Result<MessageId>` / `delete_message(chat_id, message_id) -> Result<()>` / `get_file(file_id) -> Result<Bytes>` | (도메인 로직 부재) |
+| 책임 (plugin) | (raw 호출만) | mode 분기 (document/text/channel for storage, alert/event for notify) + sqlite mapping (plugin 단위 sqlite) + 48h delete 검증 + 50MB pre-check + chat_id 정책 + 인증 토큰 검증 |
+| 인증 | `bot_token` env 또는 plugin config | plugin manifest `config_keys` |
+| capabilities | (어댑터 부재) | plugin manifest `[capabilities]` 박힘 |
+| 기존 인프라 활용 | `CLAUDE.local.md` telegram bot (`@reujea_test_bot`) + bridges.json (group_bot=-1003990184767, channel_bot=-1003976785396) — plugin 측 config 박힘 | 동 |
+| plugin id | `fp-plugin-storage-telegram` + `fp-plugin-notify-telegram` | (양쪽 plugin 별도 본체, 같은 어댑터 공유) |
+| 본 plan trigger | 사용자 발화 2026-06-16 "원격 저장소를 텔레그램 추가 구성 추가" → 2026-06-17 본질 재정의 3차로 어댑터 단순화 |
+
+#### 본 재정의의 plan 위임
+
+- 본 §3-C 본문 = **raw I/O transport 단일 진실원** (2026-06-17 본질 재정의 3차). 기존 §3-C outbound 우산 본문 (2026-06-16) 흡수 + 어댑터 도메인 로직 plugin 이관 의무
+- 진입 plan = `transport-flatten-1` (별도 plan, hex-arch-d / settings-db-split-1 와 직교). 본 plan 본진입 = settings-db-split-1 prep-unlock 완료 후 cycle 5+
+- 신규 외부 연계 추가 = transport 호출 wrap (수십 줄) + plugin 본문 신설 (도메인 로직)
+- outbound-umbrella-1 plan = 본 재정의로 의미 변경 (24 어댑터 manifest impl + 6 port super-trait 박힘 = 모두 폐기 대상). plan 자체는 종결 처리 (history 보존) + transport-flatten-1 이 후속
+
+### 3-D. Plugin Step Hook 인터페이스 (2026-06-17 신규, 본질 재정의 3차)
+
+사용자 발화 = `"외부 plugin이 가공 파이프라인의 스텝에 연결 될 수 있도록 인터페이스 spec 추가"`.
+
+해석 합의 (옵션 1, **전/후 hook**): host 의 가공 파이프라인 각 step 전후에 plugin 이 IPC hook 으로 연결. step 실행 전후 = host broadcast_event → plugin 동기 응답 대기 (timeout) → host 결과 흡수.
+
+#### 3-D-1. 파이프라인 step 정의 (7 단계 + Quarantine 분기)
+
+| step id | 단계 | host 본체 위치 | hook 가능 시점 |
+|---------|------|------------|----------|
+| `watch` | 파일 감지 | `adapters/driving/watcher.rs` | `pre` (감지 직후, plugin이 ignore 결정 가능) / `post` (큐 적재 후) |
+| `preprocess` | 전처리 (PDF/Excel/한글 추출 + 인코딩 감지) | `adapters/driven/preprocessing/preprocessor.rs` | `pre` (입력 검증) / `post` (추출 텍스트 전달) |
+| `classify` | 도메인 분류 + 민감도 검사 | host 잔류 (`fp-plugin-classify` 호출) | `pre` (분류 전 전처리 텍스트) / `post` (분류 결과) |
+| `chunk` | 청킹 (Fixed/Semantic/Recursive/Adaptive) + 4지표 (SC/BI/ICC/DCC) | `core/domain/chunking.rs` | `pre` (전체 텍스트) / `post` (청크 배열) |
+| `embed` | 임베딩 (dense + sparse) | host = `fp-plugin-embedding-*` plugin 호출 | `pre` (청크) / `post` (벡터) |
+| `verify` | 검증 (강한 주장 + needs_verification) | `fp-plugin-verify` 호출 | `pre` (가공본) / `post` (검증 결과) |
+| `index` | 벡터 DB 색인 (LocalVectorStore 또는 fp-plugin-search) | host = `fp-plugin-search` plugin 호출 | `pre` (벡터+메타) / `post` (색인 완료) |
+| `store` | DB 영속 (DocStore + settings.db) + raw 파일 보관 | host 본체 | `pre` (저장 직전) / `post` (저장 완료) |
+| `quarantine` (분기) | 격리 (verify 실패 / preprocess 실패 / sensitive 분류) | host 본체 | `pre` (격리 직전, plugin이 alert 발송 가능) / `post` (격리 완료) |
+
+각 step 의 `pre` / `post` 시점에 plugin 의 hook 호출 가능 = **총 16 hook 시점** (8 step × 2 시점 + quarantine 2).
+
+#### 3-D-2. HookPoint trait + plugin SDK
+
+```rust
+// core/ports/plugin_hook.rs (신규)
+#[async_trait]
+pub trait PluginHook: Send + Sync {
+    fn step(&self) -> StepId;             // watch / preprocess / classify / chunk / embed / verify / index / store / quarantine
+    fn position(&self) -> HookPosition;   // Pre / Post
+    fn priority(&self) -> i32 { 0 }       // 같은 step+position 안 정렬 (오름차순)
+
+    async fn invoke(
+        &self,
+        ctx: &HookContext,
+    ) -> Result<HookResponse>;
+}
+
+pub enum StepId { Watch, Preprocess, Classify, Chunk, Embed, Verify, Index, Store, Quarantine }
+pub enum HookPosition { Pre, Post }
+
+pub struct HookContext {
+    pub trace_id: String,
+    pub file_id: String,
+    pub step: StepId,
+    pub position: HookPosition,
+    pub payload: serde_json::Value,   // step 별 데이터 (전처리 텍스트 / 청크 / 벡터 / 메타 등)
+    pub metadata: HashMap<String, String>,
+}
+
+pub enum HookResponse {
+    Continue,                                  // 다음 step 진행
+    Skip,                                       // 본 step 건너뜀 (예: pre hook 에서 ignore 결정)
+    Quarantine { reason: String },             // 격리 분기 진입
+    Replace { payload: serde_json::Value },    // payload 교체 (예: pre chunk hook 에서 청킹 전 텍스트 정제)
+    Augment { metadata: HashMap<String, String> }, // 메타 추가 (예: post classify 에서 분류 태그 추가)
+}
+```
+
+#### 3-D-3. plugin manifest contribute (`fp-plugin.toml`)
+
+plugin 이 hook 등록 = manifest 의 `[[contributes.step_hook]]` 박힘:
+
+```toml
+[[contributes.step_hook]]
+step = "embed"
+position = "pre"
+priority = 0
+timeout_ms = 5000      # host 가 응답 대기 timeout
+on_timeout = "continue" # continue / fail / quarantine
+```
+
+manifest 박힘 = host 의 `PluginRegistry::discover` 가 자동 등록 + step 실행 시 자동 호출. plugin 코드 변경 부재 = manifest 만으로 hook 등재 가능.
+
+#### 3-D-4. IPC wire (Phase 202 정합 확장)
+
+기존 `IpcMessage::method` 확장 — `"step_hook.{step}.{position}"` 명명 규칙 (메타 룰 24 정합):
+
+```
+method = "step_hook.embed.pre"   →   plugin = handle_step_hook(ctx) → HookResponse JSON 반환
+method = "step_hook.chunk.post"  →   동일
+```
+
+host audit stage = `plugin.{id}.step_hook.{step}.{position}` (메타 룰 24 정합).
+
+#### 3-D-5. hook 실행 순서 + 분기
+
+```
+host step 실행 흐름 (예: embed step):
+
+1. host: emit step_hook.embed.pre broadcast
+2. plugin (priority asc): handle_step_hook(ctx) 동기 응답
+   - Continue: 다음 plugin
+   - Skip: embed step 자체 skip
+   - Quarantine: 격리 분기 진입
+   - Replace: ctx.payload 교체 후 다음 plugin
+   - Augment: ctx.metadata 추가 후 다음 plugin
+3. host: embed step 본체 실행 (vec_io::embed_batch)
+4. host: emit step_hook.embed.post broadcast
+5. plugin (priority asc): handle_step_hook(ctx_with_result) 동기 응답
+6. host: 다음 step 진행 (verify)
+```
+
+#### 3-D-6. 기존 hook (`core/domain/hooks.rs`) 와의 관계
+
+기존 hook = 본 §3-D 의 부분집합 (5 이벤트: file_detected / process_start / process_complete / verify_fail / search_query). 본 §3-D = **16 시점 확장 + 동기 응답 + payload 교체 기능 추가**. 기존 hook = deprecated.md 단방향 위임 + §3-D 로 흡수.
+
+#### 3-D-7. 진입 plan 위임
+
+- 진입 plan = `plugin-step-hook-1` (cycle 5+ 후보, settings-db-split-1 prep-unlock 완료 후)
+- 의존 = Phase 202 본진입 완료 ✅ (PluginRegistry::call + broadcast_event 실 구현, lesson 76)
+- step-by-step 작업 = (a) `core/ports/plugin_hook.rs` trait 정의 (b) plugin manifest 확장 (c) `PluginRegistry::invoke_step_hook(ctx)` 헬퍼 신설 (d) 가공 파이프라인 8 step 본체에 hook 호출 박힘 (e) integration test (mock plugin step hook)
+
+
+## 4. ~~plugin 분류 — 28 MCP 도구 매핑~~ (2026-06-17 MCP 완전 폐기, deprecated.md 위임)
 
 | Plugin | MCP 도구 | permissions |
 |--------|----------|-------------|
@@ -404,3 +623,32 @@ impl PluginRegistry {
 3. **Phase 202** — IPC bus + wire 프로토콜 + audit 통합
 
 각 단계 종결 시 메타 룰 17 release 재빌드 + 원격 검증 의무.
+
+## 14. Phase 207~209 outbound 우산 본진입 단계 (2026-06-17, lesson 78 정합)
+
+본 §3-C outbound 우산 재정의 + lesson 78 step-o1~o6 진행 결과 정합:
+
+### Phase 207 — outbound 어댑터 → plugin 변환
+
+| 단계 | 영역 |
+|------|------|
+| 207-A | `fp-outbound-storage-*` 5 plugin 변환 (s3 / webdav / network / notion / telegram) — 각 path 의존 어댑터 → IPC plugin binary |
+| 207-B | `fp-outbound-llm-*` 7 plugin 변환 (claude / anthropic / openai / gemini / ollama / fallback / chunked-agent) |
+| 207-C | `fp-outbound-embedding-*` 6 plugin 변환 (claude / openai / fastembed / fastembed-sparse / local / python-onnx) |
+| 207-D | `fp-outbound-notify-*` 2 + `fp-outbound-rerank-*` 3 + `fp-outbound-verify-1` 변환 |
+
+각 plugin = `[[bin]] name = "fp-outbound-*"` 박힘 + `main.rs (fp_plugin_sdk::run::<P>())` 패턴. host 측 = path 의존 → 매니페스트 의존 전환.
+
+### Phase 208 — outbound 우산 UI 자동 폼 + 회귀 가드
+
+- `OutboundManifest::config_keys()` 활용 = settings 표면 자동 폼 생성 (Pipeline 노드별)
+- `OutboundManifest::modes()` = mode 분기 UI 자동 노출 (telegram document/text/channel 등)
+- 회귀 가드: 신규 outbound 추가 시 = manifest impl 박힘 의무 (super-trait 강제 = lesson 78 sub-pattern 1 정합)
+
+### Phase 209 — IPC bench + 5% 임계
+
+- 같은 프로세스 호출 대비 IPC 오버헤드 측정 (tasty 트레이드오프 선례)
+- **5% 회귀 임계** = bench 결과 outbound IPC 호출 대비 in-process 호출 의 평균 latency 차이 5% 초과 시 = 본 plugin 영역 영구 in-process 잔류 결정
+- bench 대상 = `fp-outbound-storage-telegram` (sendDocument 50MB 영역) + `fp-outbound-embedding-fastembed` (BGE-M3 64ms/건 영역)
+
+각 단계 종결 시 메타 룰 17 release 재빌드 + 원격 검증 의무 + lesson 신규 entry 박힘 의무.

@@ -4,8 +4,8 @@
 //! TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID 설정 시 Telegram 테스트 실행.
 //! SLACK_BOT_TOKEN + SLACK_CHANNEL 설정 시 Slack 테스트 실행.
 
-use file_pipeline_adapters::driven::notification::slack_notify::SlackNotificationAdapter;
-use file_pipeline_adapters::driven::notification::telegram_notify::TelegramNotificationAdapter;
+use file_pipeline_adapters::driven::notify::slack_notify::SlackNotificationAdapter;
+use file_pipeline_adapters::driven::notify::telegram_notify::TelegramNotificationAdapter;
 use file_pipeline_core::domain::models::{DbStats, ProcessingIssue, ProcessingSummary};
 use file_pipeline_core::ports::output::NotificationPort;
 

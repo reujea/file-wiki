@@ -207,3 +207,14 @@ async fn scenario_incremental_skip() {
     let stats2 = service.vector_db.stats().unwrap();
     assert_eq!(stats2.total_documents, 1, "같은 내용은 중복 스킵");
 }
+
+// step-o2 partial 해소 추가 (2026-06-17)
+impl file_pipeline_core::ports::outbound::OutboundManifest for ScenarioLlm {
+    fn id(&self) -> &str { "fp-outbound-llm-scenario" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Llm
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("scenario")
+    }
+}

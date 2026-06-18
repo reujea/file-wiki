@@ -1,7 +1,10 @@
-//! Windows 시스템 트레이 아이콘 관리
+//! Windows 시스템 트레이 아이콘 관리 (driving 어댑터 — 사용자 진입점)
 //!
 //! `pipeline watch --tray` 옵션으로 활성화.
 //! 트레이 메뉴: Watch 상태 / Stats / Open Inbox / Quit
+//!
+//! hex-arch-d step-s5 (2026-06-17): shared/tray.rs → adapters/driving/tray.rs 이전.
+//! shared/core 내부 의존 0 (std + tray_icon + anyhow only) = cycle-free 이전.
 
 #[cfg(windows)]
 pub mod windows_tray {

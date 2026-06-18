@@ -9,6 +9,7 @@ use anyhow::Result;
 use tracing::{info, warn};
 
 use file_pipeline_shared::config;
+use file_pipeline_shared::config::{PipelineConfigExt, ResolvedPathsExt};
 
 use crate::state::AppState;
 

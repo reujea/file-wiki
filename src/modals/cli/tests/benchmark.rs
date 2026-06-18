@@ -439,3 +439,25 @@ async fn benchmark_cross_references() {
 
     assert!(all.len() >= 5, "최소 5개 등록 (실제: {})", all.len());
 }
+
+// step-o2 partial 해소 (2026-06-17): integration test mock OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for BenchLlm {
+    fn id(&self) -> &str { "fp-outbound-llm-bench" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Llm
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("bench")
+    }
+}
+
+// step-o2 partial 해소 (2026-06-17): integration test mock OutboundManifest 박힘
+impl file_pipeline_core::ports::outbound::OutboundManifest for HashEmbedder {
+    fn id(&self) -> &str { "fp-outbound-embedding-hash" }
+    fn category(&self) -> file_pipeline_core::ports::outbound::OutboundCategory {
+        file_pipeline_core::ports::outbound::OutboundCategory::Embedding
+    }
+    fn capabilities(&self) -> file_pipeline_core::ports::output::ResourceCapabilities {
+        file_pipeline_core::ports::output::ResourceCapabilities::standard("hash")
+    }
+}

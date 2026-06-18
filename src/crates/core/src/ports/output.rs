@@ -45,7 +45,7 @@ impl AuditPort for NullAuditAdapter {
 
 /// LLM 가공 포트 — 분류+가공 통합
 #[async_trait]
-pub trait LLMPort: Send + Sync {
+pub trait LLMPort: crate::ports::outbound::OutboundManifest + Send + Sync {
     /// 파일을 분류하고 유형별 형식으로 가공 (단일 호출)
     async fn classify_and_process(
         &self,
@@ -166,7 +166,7 @@ impl ResourceCapabilities {
 
 /// 원격 저장소 포트 (S3/WebDAV/네트워크/Notion)
 #[async_trait]
-pub trait RemoteStoragePort: Send + Sync {
+pub trait RemoteStoragePort: crate::ports::outbound::OutboundManifest + Send + Sync {
     /// 로컬 파일을 원격 저장소에 업로드
     async fn upload(&self, local_path: &Path, remote_key: &str) -> Result<()>;
     /// 원격 파일을 로컬에 다운로드
@@ -404,7 +404,7 @@ pub trait PreprocessPort: Send + Sync {
 
 /// 임베딩 포트
 #[async_trait]
-pub trait EmbeddingPort: Send + Sync {
+pub trait EmbeddingPort: crate::ports::outbound::OutboundManifest + Send + Sync {
     /// 벡터 차원 수
     fn dim(&self) -> usize;
 
@@ -441,7 +441,7 @@ pub trait EmbeddingPort: Send + Sync {
 
 /// 알림 포트
 #[async_trait]
-pub trait NotificationPort: Send + Sync {
+pub trait NotificationPort: crate::ports::outbound::OutboundManifest + Send + Sync {
     /// 일반 알림
     async fn send(&self, title: &str, body: &str, level: &str) -> Result<()>;
 
@@ -470,7 +470,7 @@ pub trait NotificationPort: Send + Sync {
 
 /// LLM 기반 검증 포트 (선택적)
 #[async_trait]
-pub trait VerificationPort: Send + Sync {
+pub trait VerificationPort: crate::ports::outbound::OutboundManifest + Send + Sync {
     /// 환각 탐지: (score 0~1, 설명)
     async fn detect_hallucination(
         &self,
@@ -490,7 +490,7 @@ pub trait VerificationPort: Send + Sync {
 
 /// 검색 결과 리랭킹 포트
 #[async_trait]
-pub trait RerankerPort: Send + Sync {
+pub trait RerankerPort: crate::ports::outbound::OutboundManifest + Send + Sync {
     /// 쿼리와 후보 문서 목록을 받아 관련도 순으로 재정렬
     async fn rerank(&self, query: &str, candidates: Vec<SimilarDoc>) -> Result<Vec<SimilarDoc>>;
     /// 리랭커가 활성화되어 있는지
@@ -515,4 +515,16 @@ pub trait ProcessingMetricsPort: Send + Sync {
     fn record_verify(&self, _passed: bool) {}
     /// 단일 파일 처리 소요시간 (ms). avg 산출용 누적.
     fn record_process_time(&self, _elapsed_ms: u64) {}
+}
+
+/// step-s1 (2026-06-16, hex-arch-d): KG 질의 포트 — `KgQueryEngine` trait wrapper.
+///
+/// fp-plugin-kg 이관 시점 본 포트 대체. 디폴트 구현 부재 (직접 위임).
+pub trait KgPort: Send + Sync {
+    /// 주어진 문서의 1-hop 이웃 + 엣지.
+    fn neighbors(&self, doc_id: &str) -> Result<crate::domain::wiki_export::KgQueryResult>;
+    /// 두 문서 사이 경로 (BFS).
+    fn find_paths(&self, source_id: &str, target_id: &str) -> Result<crate::domain::wiki_export::KgQueryResult>;
+    /// KG 통계 (총 노드 / 엣지 / 평균 차수 등).
+    fn stats(&self) -> Result<crate::domain::wiki_export::KgStats>;
 }

@@ -13,7 +13,9 @@ use file_pipeline_core::domain::models::DocTypeRegistry;
 use file_pipeline_core::ports::output::RerankerPort;
 use file_pipeline_core::service::FileProcessingService;
 
-use file_pipeline_shared::{config, tray, build_service};
+use file_pipeline_shared::{config, build_service};
+use file_pipeline_shared::config::{PipelineConfigExt, ResolvedPathsExt};
+use file_pipeline_adapters::driving::tray;
 
 #[derive(Parser)]
 #[command(name = "pipeline", version, about = "File Processing Pipeline")]
@@ -133,9 +135,6 @@ enum Commands {
 
     /// 기존 Qdrant 벡터를 .vec 파일로 추출 (프로바이더 변경 시)
     BackfillVec,
-
-    /// MCP 서버 실행 (Claude Code 연동, stdio 모드)
-    Serve,
 
     /// 서비스 관리 (OS 부팅 시 자동실행)
     Service {
@@ -763,7 +762,7 @@ async fn main() -> Result<()> {
 
             // 리랭킹
             if cfg.rerank.enabled && !results.is_empty() {
-                if let Ok(reranked) = file_pipeline_adapters::driven::reranking::claude_reranker::ClaudeReranker::new(cfg.rerank.top_n)
+                if let Ok(reranked) = file_pipeline_adapters::driven::rerank::claude_reranker::ClaudeReranker::new(cfg.rerank.top_n)
                     .rerank(&query, results.clone()).await {
                     results = reranked;
                 }
@@ -925,72 +924,6 @@ async fn main() -> Result<()> {
                 }
             }
             println!("backfill-vec 완료: {}/{} 저장", saved, all.len());
-        }
-
-        Commands::Serve => {
-            paths.create_all()?;
-            let doc_types_path = config::resolve_doc_types_path(&paths);
-            let registry = config::load_doc_type_registry(&doc_types_path)?;
-            let service = build_service_cli(&cfg, &paths, registry)?;
-            let service = Arc::new(service);
-            info!("MCP 서버 시작 (stdio)");
-
-            let reranker: Arc<dyn file_pipeline_core::ports::output::RerankerPort> = if cfg.rerank.enabled {
-                match cfg.rerank.provider.as_str() {
-                    "claude_cli" if file_pipeline_shared::which_claude() => {
-                        info!("리랭커: Claude CLI (top_n={})", cfg.rerank.top_n);
-                        Arc::new(file_pipeline_adapters::driven::reranking::claude_reranker::ClaudeReranker::new(cfg.rerank.top_n))
-                    }
-                    _ => {
-                        Arc::new(file_pipeline_adapters::driven::reranking::null_reranker::NullReranker)
-                    }
-                }
-            } else {
-                Arc::new(file_pipeline_adapters::driven::reranking::null_reranker::NullReranker)
-            };
-
-            let data_dir = config::find_data_dir(cli.config.as_deref());
-            let state = file_pipeline_shared::mcp_server::McpState {
-                vector_db: Arc::clone(&service.vector_db),
-                storage: Arc::clone(&service.storage),
-                embedding: Arc::clone(&service.embedding),
-                llm: Arc::clone(&service.llm),
-                reranker,
-                settings_db_path: data_dir.join("settings.db"),
-                search_cache: std::sync::Mutex::new(std::collections::HashMap::new()),
-                search_log: std::sync::Mutex::new(Vec::new()),
-                search_mode_counts: std::sync::Mutex::new(std::collections::HashMap::new()),
-                crag_counts: std::sync::Mutex::new(std::collections::HashMap::new()),
-                expand_kg_hops: cfg.search.expand_kg_hops,
-                diversity_threshold: cfg.search.diversity_threshold,
-                hyde_enabled: cfg.search.hyde_enabled,
-                hyde_min_results: cfg.search.hyde_min_results,
-                // Phase 91 A2: 출력 PII mask 주입. 사용자 패턴은 settings.db에서 enabled만 로드.
-                output_pii_mask: cfg.search.output_pii_mask,
-                pii_user_patterns: file_pipeline_shared::settings_db::SettingsDb::open(&data_dir.join("settings.db"))
-                    .and_then(|db| db.list_user_pii_patterns())
-                    .unwrap_or_default()
-                    .into_iter()
-                    .filter(|(_, _, enabled)| *enabled)
-                    .map(|(name, pat, _)| (name, pat))
-                    .collect(),
-                // Phase 94 A3: MCP 검색에 settings.db 기반 AuditPort 주입.
-                audit: file_pipeline_shared::settings_audit_adapter::SettingsAuditAdapter::shared(
-                    data_dir.join("settings.db")
-                ),
-                // Phase 103 G3 / G4 (GraphRAG 흡수 인프라 선구현)
-                tfidf_rerank_enabled: cfg.search.tfidf_rerank_enabled,
-                kg_beam_search: cfg.search.kg_beam_search,
-                // Phase 202 B2: plugin IPC registry (build_service에서 discover 완료)
-                plugin_registry: std::sync::Arc::clone(&service.plugin_registry),
-            };
-            // Phase 80-A/B: DB에서 카운터 복원
-            state.restore_counters();
-
-            let transport = rmcp::transport::io::stdio();
-            let server = rmcp::service::serve_server(state, transport).await
-                .map_err(|e| anyhow::anyhow!("MCP 서버 시작 실패: {}", e))?;
-            server.waiting().await?;
         }
 
         Commands::Service { action } => {
